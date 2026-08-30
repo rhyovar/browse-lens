@@ -67,7 +67,11 @@
     "files": [
       "dist/**/*",
       "!dist/ui/**/*",
-      "ui/**/*"
+      "ui/**/*",
+      "cli.mjs",
+      "scripts/**/*",
+      "examples/**/*",
+      "LICENSE"
     ],
     "linux": {
       "target": [
