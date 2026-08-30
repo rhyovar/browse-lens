@@ -125,6 +125,22 @@ holds the message instead of `result`:
 ```
 Rejected with a top-level `error` message (not `browser.ran`) if `spaceId`/`pageId` doesn't resolve to a page owned by that Space.
 
+### Running a named plugin script instead
+
+`payload` may have `plugin` instead of `script` (exactly one of the two —
+both or neither is rejected):
+
+```json
+{ "type": "browser.run", "payload": { "spaceId": "...", "pageId": "...", "plugin": { "package": "browselens-plugin-example", "name": "readTitle", "params": {} } } }
+```
+
+The server resolves `plugin.package`'s named script (an installed npm
+package) with `plugin.params`, then runs the resulting text exactly like
+`script` — same sandbox, same response shape. A resolution failure
+(unknown package or script name) comes back as a top-level `error`, before
+anything runs. See [../../docs/PLUGINS.md](../../docs/PLUGINS.md) for
+authoring one.
+
 ### Tools available inside the script
 
 | Function | Signature | Returns | Maps to |

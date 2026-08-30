@@ -48,7 +48,7 @@ Priority order for maximum traction:
 - [x] Benchmark harness
 - [x] Session recording/replay
 - [x] Privacy mode (blocklist; general allow/block list still open)
-- [ ] Plugin system
+- [x] Plugin system (script library; new sandbox tools / new WS messages deferred)
 - [ ] README/docs updates as features land
 
 ### Playwright Chromium runtime
@@ -249,6 +249,31 @@ shouldn't be decided without real usage data. The blocklist is the
 bounded, low-risk piece that proves the `context.route()` wiring; the
 general list is planned as a fast-follow once that's proven out.
 
+### Plugin system
+
+A plugin is a regular npm package packaging up named, ready-made
+`browser.run` scripts ("login to Gmail," "scrape a product page") so an
+agent can reference them by name instead of hand-writing the script every
+time. `browser.run`'s payload can have `plugin: { package, name, params }`
+instead of `script` — the server resolves it
+(`resolveScript` in [`src/agent/plugins.ts`](src/agent/plugins.ts), via
+Node's normal `import(packageName)`) into a script string and runs it
+through the **exact same sandbox** as any hand-written script — a plugin
+is data (a script template), not new server-side code execution, so there's
+no new trust boundary.
+
+This ships the "prebuilt script library" model only. Two bigger
+extensions — new `tools.*` functions inside the sandbox, and whole new
+WebSocket message types/server behaviors a plugin could add — were both
+considered and explicitly deferred: they'd need real Node/server access,
+a genuinely bigger trust boundary than today's sandboxed scripts, and
+weren't needed to solve the problem in front of us. Full authoring guide,
+the safe-param-interpolation rule (`JSON.stringify` everything — verified
+with a value containing both `"` and `'` in live testing), and a working
+template plugin in
+[`examples/browselens-plugin-example`](examples/browselens-plugin-example)
+are in [docs/PLUGINS.md](docs/PLUGINS.md).
+
 ### Manual validation flow
 
 Automated tests run headless and can't confirm the actual point of this
@@ -308,6 +333,7 @@ that opens nothing, so that's deferred until the UI lands.
 │   ├── agent/
 │   │   ├── tool-session.ts
 │   │   ├── recorder.ts
+│   │   ├── plugins.ts
 │   │   ├── permissions.ts
 │   │   └── audit.ts
 │   └── protocol/
@@ -324,11 +350,16 @@ that opens nothing, so that's deferred until the UI lands.
 │   ├── browser_use_task.py
 │   ├── replay.mjs
 │   └── diff.mjs
+├── examples/
+│   └── browselens-plugin-example/
+│       ├── package.json
+│       └── index.js
 ├── docs/
 │   ├── MANUAL_VALIDATION.md
 │   ├── BENCHMARK.md
 │   ├── RECORDING.md
-│   └── PRIVACY.md
+│   ├── PRIVACY.md
+│   └── PLUGINS.md
 ├── skills/
 │   └── browse-lens/
 │       ├── SKILL.md

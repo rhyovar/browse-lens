@@ -3,6 +3,7 @@ import { SpaceRegistry } from '../space/registry.js';
 import { spaceIsolation } from '../space/isolation.js';
 import { runAgentScript } from '../agent/tool-session.js';
 import { startRecording, getRecorder, stopRecording } from '../agent/recorder.js';
+import { resolveScript } from '../agent/plugins.js';
 import { parseClientMessage } from './messages.js';
 
 const wss = new WebSocketServer({ port: 8765 });
@@ -80,13 +81,27 @@ wss.on('connection', (ws: WebSocket) => {
           error(ws, `unknown page: ${msg.payload.pageId}`);
           break;
         }
+
+        let script: string;
+        if (msg.payload.script) {
+          script = msg.payload.script;
+        } else {
+          const { package: pkg, name, params } = msg.payload.plugin!;
+          try {
+            script = await resolveScript(pkg, name, params ?? {});
+          } catch (err) {
+            error(ws, (err as Error).message);
+            break;
+          }
+        }
+
         const started = Date.now();
-        const outcome = await runAgentScript(page, msg.payload.script);
+        const outcome = await runAgentScript(page, script);
         const elapsedMs = Date.now() - started;
 
         const space = registry.get(msg.payload.spaceId);
         if (space?.record) {
-          getRecorder(space.id)?.recordRun(msg.payload.pageId, msg.payload.script, elapsedMs, outcome);
+          getRecorder(space.id)?.recordRun(msg.payload.pageId, script, elapsedMs, outcome);
         }
 
         send(ws, 'browser.ran', { pageId: msg.payload.pageId, ...outcome });

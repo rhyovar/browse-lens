@@ -40,4 +40,42 @@ describe('parseClientMessage', () => {
     );
     expect(result.ok).toBe(true);
   });
+
+  it('accepts browser.run with a script', () => {
+    const result = parseClientMessage(
+      JSON.stringify({ type: 'browser.run', payload: { spaceId: 'a', pageId: 'p', script: 'return 1;' } })
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('accepts browser.run with a plugin reference instead of a script', () => {
+    const result = parseClientMessage(
+      JSON.stringify({
+        type: 'browser.run',
+        payload: { spaceId: 'a', pageId: 'p', plugin: { package: 'my-plugin', name: 'login', params: { user: 'x' } } }
+      })
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects browser.run with neither script nor plugin', () => {
+    const result = parseClientMessage(JSON.stringify({ type: 'browser.run', payload: { spaceId: 'a', pageId: 'p' } }));
+    expect(result).toEqual({
+      ok: false,
+      error: 'invalid message: payload must include exactly one of script or plugin'
+    });
+  });
+
+  it('rejects browser.run with both script and plugin', () => {
+    const result = parseClientMessage(
+      JSON.stringify({
+        type: 'browser.run',
+        payload: { spaceId: 'a', pageId: 'p', script: 'return 1;', plugin: { package: 'x', name: 'y' } }
+      })
+    );
+    expect(result).toEqual({
+      ok: false,
+      error: 'invalid message: payload must include exactly one of script or plugin'
+    });
+  });
 });

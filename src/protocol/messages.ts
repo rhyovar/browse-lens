@@ -30,12 +30,22 @@ const BrowserClose = z.object({
   payload: z.object({ spaceId: z.string().min(1), pageId: z.string().min(1) })
 });
 
+const PluginRef = z.object({
+  package: z.string().min(1),
+  name: z.string().min(1),
+  params: z.record(z.unknown()).optional()
+});
+
 const BrowserRun = z.object({
   type: z.literal('browser.run'),
   payload: z.object({
     spaceId: z.string().min(1),
     pageId: z.string().min(1),
-    script: z.string().min(1)
+    // Exactly one of script/plugin is required — checked in parseClientMessage,
+    // not here, since z.discriminatedUnion needs each member to be a plain
+    // ZodObject (a .refine() would wrap this in a ZodEffects).
+    script: z.string().min(1).optional(),
+    plugin: PluginRef.optional()
   })
 });
 
@@ -68,6 +78,13 @@ export function parseClientMessage(raw: string): ParseResult {
       .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
       .join('; ');
     return { ok: false, error: `invalid message: ${detail}` };
+  }
+
+  if (result.data.type === 'browser.run') {
+    const { script, plugin } = result.data.payload;
+    if ((script ? 1 : 0) + (plugin ? 1 : 0) !== 1) {
+      return { ok: false, error: 'invalid message: payload must include exactly one of script or plugin' };
+    }
   }
 
   return { ok: true, message: result.data };
