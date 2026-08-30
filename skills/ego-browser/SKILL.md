@@ -26,12 +26,21 @@ npm run dev
 
 ## Use
 
-Connect to `ws://127.0.0.1:8765` and send JSON messages:
+Connect to `ws://127.0.0.1:8765`. Create a Space first, then scope every
+browser action to it with `payload.spaceId` — a Space can only see or close
+its own tabs, never another Space's or the human's:
 
 ```json
 { "type": "space.create", "payload": { "name": "freelance-scan" } }
-{ "type": "browser.open", "payload": { "url": "https://example.com" } }
 ```
+```json
+{ "type": "browser.open", "payload": { "spaceId": "<id from space.created>", "url": "https://example.com" } }
+```
+
+The server validates every message and replies with `{ "type": "error", "payload": { "message": "..." } }`
+on malformed JSON, an unknown message type, a bad payload shape, or an
+unknown `spaceId`. Full message/response reference:
+[references/tool-reference.md](references/tool-reference.md).
 
 ## Safety
 

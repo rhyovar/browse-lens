@@ -24,8 +24,8 @@ Scaffolded. Repo created, structure planned. Implementation handoff queued for n
 - [ ] Branch protection
 - [x] Playwright Chromium runtime
 - [x] Space isolation
-- [ ] WebSocket protocol
-- [ ] Agent skill wiring
+- [x] WebSocket protocol
+- [x] Agent skill wiring
 - [ ] Manual validation flow
 
 ### Playwright Chromium runtime
@@ -63,6 +63,27 @@ This is wired into the WebSocket protocol (`space.create`, `space.close`,
 `browser.open`, `browser.list`, `browser.close`), each scoped by
 `payload.spaceId`; `browser.open`/`browser.list` reject an unknown
 `spaceId` with an `error` message.
+
+### WebSocket protocol + agent skill wiring
+
+`npm run dev:electron` (part of `npm run dev`) now starts both the shared
+Chromium context and the protocol server, listening on
+`ws://127.0.0.1:8765`.
+
+- `protocol/messages.ts` — a `zod` discriminated union of every client
+  message (`space.create`, `space.close`, `browser.open`, `browser.list`,
+  `browser.close`) with its payload shape; `parseClientMessage(raw)`
+  parses and validates raw text, returning either the typed message or an
+  error string.
+- `protocol/ws-server.ts` — parses every incoming message through
+  `parseClientMessage` before dispatch, so malformed JSON, an unknown
+  message type, a missing field, or a bad `url`/`spaceId` all come back as
+  `{ "type": "error", "payload": { "message": "..." } }` instead of
+  crashing the connection or being silently ignored.
+
+`skills/ego-browser/SKILL.md` documents the spaceId-scoped message shapes
+for agents, with the full request/response reference in
+[`skills/ego-browser/references/tool-reference.md`](skills/ego-browser/references/tool-reference.md).
 
 ## Repo layout
 
