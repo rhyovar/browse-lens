@@ -1,6 +1,7 @@
 node_modules
 dist
 .venv-browser-use
+.transcripts
 .env
 .hermes-agent-browser
 .DS_Store

@@ -46,7 +46,7 @@ Priority order for maximum traction:
 - [x] Chrome profile import
 - [x] Agent tool surface
 - [x] Benchmark harness
-- [ ] Session recording/replay
+- [x] Session recording/replay
 - [ ] Privacy mode
 - [ ] Plugin system
 - [ ] README/docs updates as features land
@@ -208,6 +208,30 @@ never got past a repeating WebSocket-reconnect cycle here even with no LLM
 involved — so its goal-driven path is implemented against its real API but
 unverified end-to-end.
 
+### Session recording, replay, and diff
+
+`record: true` on `space.create` records every `browser.run` call in that
+Space to a local `.transcripts/<spaceId>.jsonl` file — a header (the first
+`browser.open`'s URL) followed by one line per call (script, result,
+timing). Off by default; fully local, no new dependencies. Full schema and
+the two workflows it enables in
+[docs/RECORDING.md](docs/RECORDING.md):
+
+- **Debugging a failure**: open the transcript, read top to bottom — exact
+  scripts, in order, with what each one returned.
+- **Comparing two runs**: `npm run replay -- <transcript.jsonl>` opens a
+  fresh page at the transcript's `initialUrl` and re-sends every recorded
+  script in order (no manual setup reconstruction), recording a new
+  transcript as it goes. `npm run diff -- <a.jsonl> <b.jsonl>` then prints
+  a per-call table (script match, result match, timing delta) and exits
+  `1` if anything diverged — useful for the original-vs-replay case above,
+  or for comparing two independently recorded sessions (e.g. two
+  benchmark adapters, or before/after a code change).
+
+Video/trace recording (wrapping Playwright's or `agent-browser`'s built-in
+capture) is an intentionally deferred follow-up — this transcript format
+covers the debugging and diffing use cases on its own.
+
 ### Manual validation flow
 
 Automated tests run headless and can't confirm the actual point of this
@@ -265,6 +289,7 @@ that opens nothing, so that's deferred until the UI lands.
 │   │   └── isolation.ts
 │   ├── agent/
 │   │   ├── tool-session.ts
+│   │   ├── recorder.ts
 │   │   ├── permissions.ts
 │   │   └── audit.ts
 │   └── protocol/
@@ -277,10 +302,14 @@ that opens nothing, so that's deferred until the UI lands.
 ├── scripts/
 │   ├── install.sh
 │   ├── manual-validate.mjs
-│   └── benchmark.mjs
+│   ├── benchmark.mjs
+│   ├── browser_use_task.py
+│   ├── replay.mjs
+│   └── diff.mjs
 ├── docs/
 │   ├── MANUAL_VALIDATION.md
-│   └── BENCHMARK.md
+│   ├── BENCHMARK.md
+│   └── RECORDING.md
 ├── skills/
 │   └── browse-lens/
 │       ├── SKILL.md

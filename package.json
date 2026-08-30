@@ -23,7 +23,9 @@
     "test": "vitest run",
     "lint": "eslint src --ext .ts",
     "validate": "node scripts/manual-validate.mjs",
-    "benchmark": "node scripts/benchmark.mjs"
+    "benchmark": "node scripts/benchmark.mjs",
+    "replay": "node scripts/replay.mjs",
+    "diff": "node scripts/diff.mjs"
   },
   "dependencies": {
     "playwright": "^1.55.0",

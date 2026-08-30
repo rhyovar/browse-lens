@@ -9,14 +9,15 @@ the same shapes.
 
 Request:
 ```json
-{ "type": "space.create", "payload": { "name": "freelance-scan", "importProfile": false } }
+{ "type": "space.create", "payload": { "name": "freelance-scan", "importProfile": false, "record": false } }
 ```
-`name` is optional (defaults to `"untitled"`). `importProfile` is optional
-(defaults to `false`) — see "Chrome profile import" below.
+`name` is optional (defaults to `"untitled"`). `importProfile` and `record`
+are both optional and default to `false` — see "Chrome profile import" and
+"Session recording" below.
 
 Response: `space.created` with the new `Space`:
 ```json
-{ "type": "space.created", "payload": { "id": "...", "name": "freelance-scan", "createdAt": 0, "active": true, "importProfile": false } }
+{ "type": "space.created", "payload": { "id": "...", "name": "freelance-scan", "createdAt": 0, "active": true, "importProfile": false, "record": false } }
 ```
 
 ### Chrome profile import
@@ -28,6 +29,14 @@ a live link (later changes on either side don't sync). Everything else
 about the Space works the same; this only changes what its first
 `BrowserContext` starts with. See the Safety section in
 [../SKILL.md](../SKILL.md) before requesting it.
+
+### Session recording
+
+`record: true` records every `browser.run` call in this Space to
+`.transcripts/<spaceId>.jsonl` — a header line (written on the first
+`browser.open`) followed by one JSON line per call (script, result,
+timing), in order. See [../../docs/RECORDING.md](../../docs/RECORDING.md)
+for the schema and for `npm run replay`/`npm run diff`.
 
 ## space.close
 

@@ -2,6 +2,7 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { SpaceRegistry } from '../space/registry.js';
 import { spaceIsolation } from '../space/isolation.js';
 import { runAgentScript } from '../agent/tool-session.js';
+import { startRecording, getRecorder, stopRecording } from '../agent/recorder.js';
 import { parseClientMessage } from './messages.js';
 
 const wss = new WebSocketServer({ port: 8765 });
@@ -26,11 +27,19 @@ wss.on('connection', (ws: WebSocket) => {
 
     switch (msg.type) {
       case 'space.create': {
-        const space = registry.create(msg.payload.name ?? 'untitled', msg.payload.importProfile ?? false);
+        const space = registry.create(
+          msg.payload.name ?? 'untitled',
+          msg.payload.importProfile ?? false,
+          msg.payload.record ?? false
+        );
+        if (space.record) {
+          startRecording(space.id, space.importProfile);
+        }
         send(ws, 'space.created', space);
         break;
       }
       case 'space.close': {
+        stopRecording(msg.payload.spaceId);
         const closed = await registry.close(msg.payload.spaceId);
         send(ws, 'space.closed', { spaceId: msg.payload.spaceId, closed });
         break;
@@ -44,6 +53,9 @@ wss.on('connection', (ws: WebSocket) => {
         const opened = await spaceIsolation.open(msg.payload.spaceId, msg.payload.url, {
           importProfile: space.importProfile
         });
+        if (space.record) {
+          getRecorder(space.id)?.recordOpen(msg.payload.url);
+        }
         send(ws, 'browser.opened', opened);
         break;
       }
@@ -66,7 +78,15 @@ wss.on('connection', (ws: WebSocket) => {
           error(ws, `unknown page: ${msg.payload.pageId}`);
           break;
         }
+        const started = Date.now();
         const outcome = await runAgentScript(page, msg.payload.script);
+        const elapsedMs = Date.now() - started;
+
+        const space = registry.get(msg.payload.spaceId);
+        if (space?.record) {
+          getRecorder(space.id)?.recordRun(msg.payload.pageId, msg.payload.script, elapsedMs, outcome);
+        }
+
         send(ws, 'browser.ran', { pageId: msg.payload.pageId, ...outcome });
         break;
       }
