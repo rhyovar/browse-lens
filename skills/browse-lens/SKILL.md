@@ -66,7 +66,8 @@ Full command list: `npx browse-lens --help`. Full message/response shapes
 
 `tools` inside a `run` script: `snapshot()`, `click(selector)`,
 `fill(selector, text)`, `scroll(dx, dy)`, `waitForLoad()`, `url()`,
-`title()`, `capture()`.
+`title()`, `capture()`, `waitForSelector(selector, timeoutMs?)`,
+`scrapeTable(selector)`.
 
 ## Procedure
 

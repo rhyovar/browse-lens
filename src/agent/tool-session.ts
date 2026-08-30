@@ -23,6 +23,14 @@ const DEFAULT_TIMEOUT_MS = 10_000;
  * agent compose a whole workflow (read the page, act, wait, read again) as
  * one script instead of one WebSocket round-trip per step.
  */
+/** Default timeout for waitForSelector — deliberately under DEFAULT_TIMEOUT_MS so a bare call surfaces Playwright's own clean timeout error instead of the sandbox's generic "script timed out". */
+const DEFAULT_WAIT_FOR_SELECTOR_MS = 5_000;
+
+export interface ScrapedTable {
+  headers: string[];
+  rows: string[][];
+}
+
 function buildTools(page: Page) {
   return {
     snapshot: () => page.locator('body').ariaSnapshot({ mode: 'ai' }),
@@ -32,7 +40,32 @@ function buildTools(page: Page) {
     waitForLoad: () => page.waitForLoadState('networkidle'),
     url: () => page.url(),
     title: () => page.title(),
-    capture: async () => (await page.screenshot()).toString('base64')
+    capture: async () => (await page.screenshot()).toString('base64'),
+
+    /** Waits for a selector to appear (or a custom timeout to elapse) — no more hand-rolled polling loops in scripts. */
+    waitForSelector: async (selector: string, timeoutMs: number = DEFAULT_WAIT_FOR_SELECTOR_MS): Promise<void> => {
+      await page.waitForSelector(selector, { timeout: timeoutMs });
+    },
+
+    /**
+     * Extracts { headers, rows } from the first element matching `selector`
+     * (normally a <table>). Header detection: the first row counts as a
+     * header only if every one of its cells is a <th>; otherwise headers
+     * is [] and every row is data. Uses HTMLTableElement.rows, which
+     * covers plain, <thead>/<tbody>, and header-less tables uniformly.
+     */
+    scrapeTable: (selector: string): Promise<ScrapedTable> =>
+      page.locator(selector).first().evaluate((table: HTMLTableElement) => {
+        const allRows = Array.from(table.rows);
+        if (allRows.length === 0) return { headers: [], rows: [] };
+
+        const firstRowCells = Array.from(allRows[0].cells);
+        const firstRowIsHeader = firstRowCells.length > 0 && firstRowCells.every((cell) => cell.tagName === 'TH');
+        const headers = firstRowIsHeader ? firstRowCells.map((cell) => cell.textContent?.trim() ?? '') : [];
+        const dataRows = firstRowIsHeader ? allRows.slice(1) : allRows;
+        const rows = dataRows.map((row) => Array.from(row.cells).map((cell) => cell.textContent?.trim() ?? ''));
+        return { headers, rows };
+      })
   };
 }
 

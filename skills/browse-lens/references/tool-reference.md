@@ -168,10 +168,26 @@ authoring one.
 | `url` | `url(): string` | The page's current URL (not a Promise, but safe to `await`) | `page.url()` |
 | `title` | `title(): Promise<string>` | The page's `<title>` | `page.title()` |
 | `capture` | `capture(): Promise<string>` | A base64-encoded PNG screenshot | `page.screenshot()` |
+| `waitForSelector` | `waitForSelector(selector: string, timeoutMs?: number): Promise<void>` | Resolves once `selector` appears; default timeout 5000ms | `page.waitForSelector(selector, { timeout: timeoutMs })` |
+| `scrapeTable` | `scrapeTable(selector: string): Promise<{ headers: string[]; rows: string[][] }>` | Structured extraction from the first element matching `selector` (normally a `<table>`) — see below | `page.locator(selector).first().evaluate(...)` |
 
 `console.log(...)` inside the script is captured into the response's `logs`
 array (joined per call) instead of printing anywhere — use it for
 mid-workflow debugging without a second round-trip.
+
+**`waitForSelector`**: replaces hand-rolled polling loops in scripts — a
+timeout under the default 10s script timeout (see below) so a real miss
+surfaces Playwright's own clean `Timeout ...ms exceeded` error, not the
+sandbox's generic "script timed out" message. Pass a smaller `timeoutMs`
+for a tighter check, or a larger one only if you also raise the
+`browser.run` script timeout.
+
+**`scrapeTable`**: header detection is a single rule — the table's first
+row counts as a header only if *every* cell in it is a `<th>`; otherwise
+`headers` is `[]` and every row (including that first one) is a data row.
+Uses `HTMLTableElement.rows`, which covers plain tables, `<thead>`/`<tbody>`
+tables, and header-less tables uniformly, so it doesn't matter which
+structure the page uses.
 
 ### What the sandbox does and doesn't guarantee
 

@@ -40,9 +40,11 @@ this work rather than invented fresh:
 
 1. ~~Agent CLI~~ — done, see Agent CLI subsection above.
 2. ~~General allow/block domain list~~ — done, see Privacy mode subsection above.
-3. New `tools.*` sandbox functions — `scrapeTable()`, `waitForElement()`,
-   `downloadFile()`, `monitorNetwork()`, `injectScript()`,
-   `extractJSON()` (Plugin system's fast-follow).
+3. New `tools.*` sandbox functions (Plugin system's fast-follow) — shipped
+   one at a time, not batched, to prove the mechanism before committing to
+   the rest. `waitForSelector()` and `scrapeTable()` done (see Agent tool
+   surface subsection above); `downloadFile()`, `monitorNetwork()`,
+   `injectScript()`, `extractJSON()` still unbuilt.
 4. New WS message types — `session.export`/`import`, `proxy.configure`,
    `auth.inject`, `HAR.export` (also from Plugin system's scoping).
 5. Video/trace recording (Session recording's fast-follow).
@@ -153,7 +155,8 @@ click" — an agent should read the page, act, wait, and read again as **one
 execution pass**, not a round-trip loop. `browser.run` does that: it sends
 one JS snippet, which runs against a page with a `tools` object in scope
 (`snapshot`, `click`, `fill`, `scroll`, `waitForLoad`, `url`, `title`,
-`capture` — each maps to one Playwright `Page` call; exact signatures in
+`capture`, `waitForSelector`, `scrapeTable` — each maps to one Playwright
+`Page` call; exact signatures in
 [`skills/browse-lens/references/tool-reference.md`](skills/browse-lens/references/tool-reference.md)),
 and gets back one structured result — the return value, any `console.log`
 output, and whether it threw or timed out (10s default).
@@ -166,6 +169,23 @@ output, and whether it threw or timed out (10s default).
 - `src/space/isolation.ts` — `getPage(spaceId, pageId)` resolves a page only
   if it's owned by that Space (same guard as `close`), so `browser.run`
   can't reach into another Space's or the human's pages.
+
+`waitForSelector(selector, timeoutMs?)` and `scrapeTable(selector)` are
+the first two `tools.*` additions since launch (v2-backlog item 3),
+shipped one at a time rather than batched, to prove the mechanism before
+committing to the rest of the candidate list. `waitForSelector` replaces
+hand-rolled polling loops in scripts — its default timeout (5s) is
+deliberately under the script's own 10s timeout, so a real miss surfaces
+Playwright's own clean `Timeout ...ms exceeded` error instead of the
+sandbox's generic one; a dedicated test proves it actually *waits* for an
+element added after a delay, not just a one-time check. `scrapeTable`
+extracts `{ headers, rows }` from the first element matching a selector
+(normally a `<table>`) using `HTMLTableElement.rows` — a header row is
+detected only if every one of its cells is a `<th>`, so it handles plain,
+`<thead>`/`<tbody>`, and header-less tables the same way. Both verified
+live end-to-end, including through `examples/browselens-plugin-example`'s
+new `waitAndScrapeTable` script (wait for a table to appear, then scrape
+it, in one plugin call).
 
 **This is not a hardened sandbox.** Node's own docs say `vm` isn't a
 security mechanism, and the protocol has no authentication — a `browser.run`

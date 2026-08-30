@@ -105,4 +105,97 @@ describe('runAgentScript', () => {
     expect(outcome).toMatchObject({ ok: true, result: { proc: 'undefined', req: 'undefined' } });
     await isolation.closeAll('space-a');
   });
+
+  it('waitForSelector resolves once an element already present is found', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.setContent('<div id="ready">here</div>');
+
+    const outcome = await runAgentScript(page, "await tools.waitForSelector('#ready'); return await tools.title();");
+
+    expect(outcome).toMatchObject({ ok: true });
+    await isolation.closeAll('space-a');
+  });
+
+  it('waitForSelector actually waits for an element added later, not just a one-time check', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.setContent(`
+      <div id="target" style="display:none">late</div>
+      <script>
+        setTimeout(() => { document.getElementById('target').style.display = 'block'; }, 300);
+      </script>
+    `);
+
+    const outcome = await runAgentScript(
+      page,
+      "await tools.waitForSelector('#target', 2000); return await tools.snapshot();"
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect((outcome as { result: string }).result).toContain('late');
+    await isolation.closeAll('space-a');
+  });
+
+  it('waitForSelector reports a clean timeout error when the element never appears', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+
+    const outcome = await runAgentScript(page, "await tools.waitForSelector('#never-exists', 300); return 1;");
+
+    expect(outcome.ok).toBe(false);
+    expect((outcome as { error: string }).error.toLowerCase()).toContain('timeout');
+    await isolation.closeAll('space-a');
+  });
+
+  it('scrapeTable extracts headers and rows from a <th>-headed table', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.setContent(`
+      <table id="data">
+        <tr><th>Name</th><th>Score</th></tr>
+        <tr><td>Alice</td><td>90</td></tr>
+        <tr><td>Bob</td><td>85</td></tr>
+      </table>
+    `);
+
+    const outcome = await runAgentScript(page, "return await tools.scrapeTable('#data');");
+
+    expect(outcome).toMatchObject({
+      ok: true,
+      result: {
+        headers: ['Name', 'Score'],
+        rows: [
+          ['Alice', '90'],
+          ['Bob', '85']
+        ]
+      }
+    });
+    await isolation.closeAll('space-a');
+  });
+
+  it('scrapeTable treats every row as data when there is no <th> header row', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.setContent(`
+      <table id="data">
+        <tr><td>alpha</td><td>beta</td></tr>
+        <tr><td>gamma</td><td>delta</td></tr>
+      </table>
+    `);
+
+    const outcome = await runAgentScript(page, "return await tools.scrapeTable('#data');");
+
+    expect(outcome).toMatchObject({
+      ok: true,
+      result: {
+        headers: [],
+        rows: [
+          ['alpha', 'beta'],
+          ['gamma', 'delta']
+        ]
+      }
+    });
+    await isolation.closeAll('space-a');
+  });
 });

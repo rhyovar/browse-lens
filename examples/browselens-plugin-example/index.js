@@ -19,6 +19,12 @@ export default {
       await tools.fill(${JSON.stringify(params.selector)}, ${JSON.stringify(params.value)});
       await tools.click(${JSON.stringify(params.submitSelector)});
       return await tools.snapshot();
+    `,
+
+    /** Waits for a table to render, then scrapes it. params: { selector, timeoutMs? }. */
+    waitAndScrapeTable: (params) => `
+      await tools.waitForSelector(${JSON.stringify(params.selector)}, ${JSON.stringify(params.timeoutMs ?? 5000)});
+      return await tools.scrapeTable(${JSON.stringify(params.selector)});
     `
   }
 };
