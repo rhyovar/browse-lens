@@ -3,7 +3,11 @@
 WebSocket endpoint: `ws://127.0.0.1:8765`. Every message is JSON:
 `{ "type": "<type>", "payload": { ... } }`. The schemas below (enforced by
 `src/protocol/messages.ts`) are the source of truth — this file describes
-the same shapes.
+the same shapes. For actually driving the protocol, use the
+[`browse-lens` CLI](../../../docs/CLI.md) (`npx browse-lens <command>`)
+rather than hand-building these messages — one subcommand per message
+below, same payloads, printed as JSON. This reference is what the CLI
+wraps.
 
 ## space.create
 

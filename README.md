@@ -38,10 +38,7 @@ what it deliberately didn't build. That deferred work is the v2 backlog —
 a draft, not yet prioritized or scoped, surfaced from gaps found across
 this work rather than invented fresh:
 
-1. **Agent CLI** — the most-repeated finding below: there's no
-   purpose-built way for an agent to drive BrowseLens besides hand-built
-   WebSocket JSON. A real CLI (mirroring `agent-browser`'s shape) is
-   probably the single biggest lever left for the item-9 goal above.
+1. ~~Agent CLI~~ — done, see Agent CLI subsection above.
 2. General allow/block domain list (Privacy mode's fast-follow).
 3. New `tools.*` sandbox functions — `scrapeTable()`, `waitForElement()`,
    `downloadFile()`, `monitorNetwork()`, `injectScript()`,
@@ -316,16 +313,43 @@ restructured into the standard section order (`When to Use` /
 `Prerequisites` / `How to Run` / `Quick Reference` / `Procedure` /
 `Pitfalls` / `Verification`).
 
-The `How to Run` section's exact `terminal(command="node -e ...")`
-one-liner was run against a live server and confirmed to work verbatim.
+The `How to Run` section's examples are the `browse-lens` CLI (below) —
+every one of them was run against a live server and confirmed to work
+verbatim, including exact quoting.
 
-**Still an open gap, not fixed here**: there's no dedicated agent-facing
-CLI, so an agent must hand-build WebSocket JSON (or `write_file` a short
-Node script for anything needing more than one exchange) — the SKILL.md
-says this plainly in `Pitfalls` rather than pretending otherwise.
-`scripts/manual-validate.mjs` is explicitly called out as a human
-debugging tool, not something to route agent traffic through. Building a
-real agent CLI is a separate, larger piece of work than a docs pass.
+### Agent CLI (`browse-lens`)
+
+The v2-backlog item this session picked up right after skill polish: a
+real CLI so an agent invokes `npx browse-lens open <url>` through
+`terminal` instead of hand-building WebSocket JSON. `cli.mjs` at the repo
+root, wired as this package's `bin` (`package.json`'s
+`"bin": { "browse-lens": "./cli.mjs" }`) — one subcommand per WebSocket
+message (`create`, `open`, `run`, `list`, `close`), full command reference
+and exit-code semantics in [docs/CLI.md](docs/CLI.md).
+
+Two real bugs found and fixed while building this, both the kind that
+only show up under actual use, not code review:
+
+1. The first version connected to the WebSocket server *before* validating
+   the command/arguments — so a plain usage mistake (missing an argument,
+   a typo'd subcommand) reported "connection refused" instead of a usage
+   message, even with the server running fine. Fixed by validating and
+   building the message first, only connecting once there's something
+   valid to send.
+2. The `import.meta.url === file://${process.argv[1]}` entrypoint guard
+   (the same pattern used elsewhere in this repo to let a script be both
+   importable and runnable) silently failed under `npx`'s `bin` symlink —
+   `npx browse-lens` produced no output at all, because the two paths
+   didn't match through the symlink. Fixed by resolving both sides through
+   `fs.realpathSync` before comparing. Verified all three invocation
+   styles (`node cli.mjs`, `./cli.mjs`, `npx browse-lens`) work identically
+   after the fix.
+
+`buildMessage(command, args)` — the pure argv-to-message parsing logic —
+is exported and unit-tested directly (`tests/unit/cli.test.ts`, 11 tests)
+independent of any live connection; the full command set was also
+exercised live end-to-end (happy path, a script failure via `ok: false`,
+an unknown `spaceId`, and connection-refused) against a real server.
 
 ### Manual validation flow
 
@@ -370,7 +394,7 @@ that opens nothing, so that's deferred until the UI lands.
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
-├── .
+├── cli.mjs
 ├── src/
 │   ├── main/
 │   │   └── index.ts
@@ -412,7 +436,8 @@ that opens nothing, so that's deferred until the UI lands.
 │   ├── BENCHMARK.md
 │   ├── RECORDING.md
 │   ├── PRIVACY.md
-│   └── PLUGINS.md
+│   ├── PLUGINS.md
+│   └── CLI.md
 ├── skills/
 │   └── browse-lens/
 │       ├── SKILL.md

@@ -6,6 +6,9 @@
   "type": "module",
   "license": "MIT",
   "author": "rhyovar",
+  "bin": {
+    "browse-lens": "./cli.mjs"
+  },
   "engines": {
     "node": ">=20"
   },
