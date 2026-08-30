@@ -2,15 +2,15 @@
 
 Linux-native shared agent browser for Hermes.
 
-One Chromium instance. Isolated agent Spaces. Your tabs stay yours. Agents drive the browser through a controlled JS surface without fighting for the same window.
+One Chromium process. Isolated agent Spaces, each in their own window with their own cookies/storage. Your tabs stay yours. Agents drive the browser through a controlled JS surface without fighting over shared browsing data.
 
 ## Goal
 
 Build an open-source alternative to agent-native browser concepts like ego-lite, but for Linux and for Hermes workflows.
 
 Core promise:
-- Shared browser state across human + multiple agents
-- Isolated Spaces so agents don’t clobber your tabs
+- One shared Chromium process across human + multiple agents — no per-agent browser instances
+- Isolated Spaces: each gets its own cookie jar/localStorage/session state, so agents don't clobber your tabs or each other's data (opt-in profile import, not automatic sharing, is how a Space would inherit real logins — see Roadmap)
 - Agent-facing tool surface optimized for code/tool use, not CLI loops
 - Linux-first packaging and local dev experience
 
@@ -51,44 +51,61 @@ Priority order for maximum traction:
 
 ### Playwright Chromium runtime
 
-`src/browser/` launches a single Playwright-managed, persistent Chromium
-context backed by a profile at `~/.hermes-agent-browser/chromium-profile`,
-so the human and any connected agents share one browser instance and its
-logged-in state:
+`src/browser/` launches one shared Playwright Chromium process — the human
+and every agent Space run in it, each in their own `BrowserContext` (see
+Space isolation below) rather than one shared context:
 
-- `profile.ts` — resolves and creates the persistent profile directory.
-- `context.ts` — lazily launches the shared `BrowserContext` and memoizes it
-  so repeated calls reuse the same Chromium instance; `closeContext()` tears
-  it down.
-- `chromium.ts` — `openTarget(url)` opens a new tab in the shared context
+- `profile.ts` — resolves `storageStatePath(name)`, where a context's
+  cookies/localStorage get persisted (`~/.hermes-agent-browser/<name>.storage-state.json`).
+- `context.ts` — `ensureBrowser()` lazily launches the shared `Browser` and
+  memoizes it; `ensureHumanContext()` lazily creates the human's own
+  `BrowserContext` (loading its storageState from disk if present);
+  `closeBrowser()` saves the human's storageState and shuts everything down.
+- `chromium.ts` — `openTarget(url)` opens a new tab in the human's context
   and navigates to `url`.
 
 Set `HERMES_HEADLESS=true` to run headless (used by the test suite).
 Run `npx playwright install chromium` once to fetch the browser binary.
+`npm run dev:electron` installs a `SIGINT`/`SIGTERM` handler that calls
+`closeBrowser()` so `Ctrl+C` saves the human's session instead of losing it.
 
 ### Space isolation
 
-Every Space shares the one Chromium context above — isolation here is about
-tab *ownership*, not process isolation: a Space can only see, list, or close
-the pages it opened.
+Every Space gets its **own `BrowserContext`** inside the one shared Chromium
+process — a separate cookie jar, localStorage, and session state, not just
+separate tabs. A Space can't read or clobber another Space's data, or the
+human's; the human's context is likewise never shared with any Space.
+(Chrome profile import — letting a Space *opt in* to inherit the human's
+real logins — is a separate, not-yet-built roadmap item.)
+
+Chromium (via CDP, confirmed with `Browser.getWindowForTarget`) shows each
+`BrowserContext` as its own OS window — there's no way to give two isolated
+contexts tabs in the same window. So opening a page in a Space opens (or
+reuses) **that Space's own window**, separate from the human's window and
+every other Space's; pages opened within the same Space do share one window
+as tabs, same as before.
 
 - `space.ts` — the `Space` metadata shape (id, name, createdAt, active).
 - `registry.ts` — `SpaceRegistry` creates/looks up/lists Spaces; `close(id)`
   tears down the Space's pages (via `isolation.ts`) before removing it.
-- `isolation.ts` — `SpaceIsolation` opens pages tagged with a `spaceId` and
-  enforces the guard: `list`/`close`/`closeAll` only ever act on pages owned
-  by the requesting Space, so one Space can't inspect or close another's
-  tabs (or the human's, which own no Space).
+- `isolation.ts` — `SpaceIsolation.getContext(spaceId)` lazily creates a
+  `BrowserContext` per Space; `open`/`list`/`close` only ever act on that
+  Space's own pages; `closeAll(spaceId)` closes the Space's entire context
+  (pages, cookies, storage) in one call.
 
 This is wired into the WebSocket protocol (`space.create`, `space.close`,
 `browser.open`, `browser.list`, `browser.close`), each scoped by
 `payload.spaceId`; `browser.open`/`browser.list` reject an unknown
 `spaceId` with an `error` message.
 
+`tests/unit/isolation.test.ts` proves this isn't just bookkeeping: one test
+sets a cookie and a `localStorage` value in Space A, opens the same URL in
+Space B, and asserts neither is visible there.
+
 ### WebSocket protocol + agent skill wiring
 
 `npm run dev:electron` (part of `npm run dev`) now starts both the shared
-Chromium context and the protocol server, listening on
+Chromium browser and the protocol server, listening on
 `ws://127.0.0.1:8765`.
 
 - `protocol/messages.ts` — a `zod` discriminated union of every client
@@ -109,12 +126,13 @@ for agents, with the full request/response reference in
 ### Manual validation flow
 
 Automated tests run headless and can't confirm the actual point of this
-project — that a human's tabs and each agent Space's tabs stay visibly
-separate in one shared window. `docs/MANUAL_VALIDATION.md` is a step-by-step
-human walkthrough for that: start the app for real (headed), then drive it
-with `npm run validate` (`scripts/manual-validate.mjs`, an interactive CLI
-over the WebSocket protocol) while watching the Chromium window to confirm
-Spaces can't see or close each other's tabs, or the human's.
+project — that a human's browsing and each agent Space's browsing stay
+visibly and functionally separate. `docs/MANUAL_VALIDATION.md` is a
+step-by-step human walkthrough for that: start the app for real (headed),
+then drive it with `npm run validate` (`scripts/manual-validate.mjs`, an
+interactive CLI over the WebSocket protocol) while watching the Chromium
+windows to confirm Spaces get their own window and can't see or close each
+other's tabs, cookies, or the human's.
 
 ### Linux stability / packaging (in progress)
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
-import type { Page } from 'playwright';
-import { ensureContext } from '../browser/chromium.js';
+import type { BrowserContext, Page } from 'playwright';
+import { ensureBrowser } from '../browser/chromium.js';
 
 export interface SpacePage {
   id: string;
@@ -9,15 +9,27 @@ export interface SpacePage {
 }
 
 /**
- * All Spaces share one Chromium context (see src/browser/context.ts), so
- * isolation here is about tab *ownership*, not browser process isolation:
- * a Space can only see, navigate, or close the pages it opened.
+ * Every Space gets its own BrowserContext inside the one shared Chromium
+ * process — a separate cookie jar, localStorage, and session state, not
+ * just separate tabs. A Space can't read or clobber another Space's (or
+ * the human's, see src/browser/context.ts) browsing data.
  */
 export class SpaceIsolation {
+  private contexts = new Map<string, BrowserContext>();
   private pages = new Map<string, { spaceId: string; page: Page }>();
 
+  async getContext(spaceId: string): Promise<BrowserContext> {
+    let ctx = this.contexts.get(spaceId);
+    if (!ctx) {
+      const browser = await ensureBrowser();
+      ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      this.contexts.set(spaceId, ctx);
+    }
+    return ctx;
+  }
+
   async open(spaceId: string, url: string): Promise<SpacePage> {
-    const ctx = await ensureContext();
+    const ctx = await this.getContext(spaceId);
     const page = await ctx.newPage();
     await page.goto(url);
     const id = randomUUID();
@@ -41,10 +53,15 @@ export class SpaceIsolation {
     return true;
   }
 
+  /** Tears down the Space's entire BrowserContext: its pages, cookies, and storage. */
   async closeAll(spaceId: string): Promise<void> {
-    const owned = Array.from(this.pages.entries()).filter(([, entry]) => entry.spaceId === spaceId);
-    for (const [id] of owned) this.pages.delete(id);
-    await Promise.all(owned.map(([, entry]) => entry.page.close()));
+    const ctx = this.contexts.get(spaceId);
+    if (!ctx) return;
+    this.contexts.delete(spaceId);
+    for (const [id, entry] of this.pages) {
+      if (entry.spaceId === spaceId) this.pages.delete(id);
+    }
+    await ctx.close();
   }
 }
 

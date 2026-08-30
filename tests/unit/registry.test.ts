@@ -2,13 +2,13 @@ import { describe, it, expect, afterAll } from 'vitest';
 
 process.env.HERMES_HEADLESS = 'true';
 
-const { closeContext } = await import('../../src/browser/context.js');
+const { closeBrowser } = await import('../../src/browser/context.js');
 const { SpaceRegistry } = await import('../../src/space/registry.js');
 const { spaceIsolation } = await import('../../src/space/isolation.js');
 
 describe('space registry', () => {
   afterAll(async () => {
-    await closeContext();
+    await closeBrowser();
   });
 
   it('creates and lists spaces', () => {

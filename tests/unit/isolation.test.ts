@@ -2,12 +2,12 @@ import { describe, it, expect, afterAll } from 'vitest';
 
 process.env.HERMES_HEADLESS = 'true';
 
-const { closeContext } = await import('../../src/browser/context.js');
+const { closeBrowser } = await import('../../src/browser/context.js');
 const { SpaceIsolation } = await import('../../src/space/isolation.js');
 
 describe('space isolation', () => {
   afterAll(async () => {
-    await closeContext();
+    await closeBrowser();
   });
 
   it('only lists pages owned by the requesting space', async () => {
@@ -47,5 +47,29 @@ describe('space isolation', () => {
 
     expect(isolation.list('space-a')).toEqual([]);
     expect(isolation.list('space-b').map((p) => p.id)).toEqual([b.id]);
+  });
+
+  it('gives each space its own cookie jar and localStorage, not shared', async () => {
+    const isolation = new SpaceIsolation();
+    await isolation.open('space-a', 'https://example.com');
+    const ctxA = await isolation.getContext('space-a');
+    await ctxA.addCookies([
+      { name: 'secret', value: 'space-a-cookie', url: 'https://example.com' }
+    ]);
+    const rawPageA = (await ctxA.pages())[0];
+    await rawPageA.evaluate(() => localStorage.setItem('secret', 'space-a-local'));
+
+    await isolation.open('space-b', 'https://example.com');
+    const ctxB = await isolation.getContext('space-b');
+    const rawPageB = (await ctxB.pages())[0];
+
+    const cookiesB = await ctxB.cookies('https://example.com');
+    expect(cookiesB.find((c) => c.name === 'secret')).toBeUndefined();
+
+    const localValueB = await rawPageB.evaluate(() => localStorage.getItem('secret'));
+    expect(localValueB).toBeNull();
+
+    await isolation.closeAll('space-a');
+    await isolation.closeAll('space-b');
   });
 });
