@@ -25,6 +25,12 @@ export default {
     waitAndScrapeTable: (params) => `
       await tools.waitForSelector(${JSON.stringify(params.selector)}, ${JSON.stringify(params.timeoutMs ?? 5000)});
       return await tools.scrapeTable(${JSON.stringify(params.selector)});
+    `,
+
+    /** Waits for embedded JSON to render, then extracts it. params: { selector, timeoutMs? }. */
+    waitAndExtractJSON: (params) => `
+      await tools.waitForSelector(${JSON.stringify(params.selector)}, ${JSON.stringify(params.timeoutMs ?? 5000)});
+      return await tools.extractJSON(${JSON.stringify(params.selector)});
     `
   }
 };
