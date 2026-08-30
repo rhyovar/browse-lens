@@ -28,12 +28,22 @@ const BrowserClose = z.object({
   payload: z.object({ spaceId: z.string().min(1), pageId: z.string().min(1) })
 });
 
+const BrowserRun = z.object({
+  type: z.literal('browser.run'),
+  payload: z.object({
+    spaceId: z.string().min(1),
+    pageId: z.string().min(1),
+    script: z.string().min(1)
+  })
+});
+
 export const ClientMessage = z.discriminatedUnion('type', [
   SpaceCreate,
   SpaceClose,
   BrowserOpen,
   BrowserList,
-  BrowserClose
+  BrowserClose,
+  BrowserRun
 ]);
 
 export type ClientMessage = z.infer<typeof ClientMessage>;

@@ -46,10 +46,23 @@ current session. It is **not** a live link: later changes to either side
 don't sync. Only request it when asked to, or when the task cannot succeed
 without an existing login — see Safety below.
 
+Once a page is open, drive it with `browser.run` instead of one message per
+action — compose the whole step (read the page, act, wait, read again) as a
+single JS snippet with a `tools` object in scope:
+
+```json
+{ "type": "browser.run", "payload": { "spaceId": "...", "pageId": "...", "script": "await tools.fill('#q', 'hermes'); await tools.click('#submit'); await tools.waitForLoad(); return await tools.snapshot();" } }
+```
+
+`tools` exposes `snapshot()`, `click(selector)`, `fill(selector, text)`,
+`scroll(dx, dy)`, `waitForLoad()`, `url()`, `title()`, and `capture()`. Full
+signatures and the response shape (including how thrown errors and timeouts
+come back) are in
+[references/tool-reference.md](references/tool-reference.md).
+
 The server validates every message and replies with `{ "type": "error", "payload": { "message": "..." } }`
 on malformed JSON, an unknown message type, a bad payload shape, or an
-unknown `spaceId`. Full message/response reference:
-[references/tool-reference.md](references/tool-reference.md).
+unknown `spaceId`/`pageId`.
 
 ## Safety
 
@@ -60,3 +73,7 @@ unknown `spaceId`. Full message/response reference:
   session cookies — treat it like handing over a logged-in laptop. Only set
   it `true` when the task explicitly calls for the human's own account, and
   never on a Space whose task involves untrusted or adversarial content.
+- `browser.run` scripts execute with real capability over the page (forms,
+  clicks, navigation) but no hardened sandboxing beyond the isolation
+  already described — write scripts you'd be comfortable running yourself,
+  not ones assembled from untrusted page content.

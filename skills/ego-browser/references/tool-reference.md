@@ -85,10 +85,53 @@ Response:
 `closed` is `false` if `pageId` doesn't exist or belongs to a different
 Space — a Space can never close another Space's tab this way.
 
-## error
+## browser.run — the agent tool surface
 
-Sent instead of the normal response whenever a message fails to parse,
-doesn't match one of the shapes above, or names an unknown `spaceId`:
+Runs one JS snippet against a page in a single pass — compose a whole
+workflow (read the page, act on it, wait, read again) as one script instead
+of one WebSocket message per step. The snippet body becomes the body of an
+`async () => { ... }` function, so top-level `await` and `return <value>`
+both work.
+
+Request:
 ```json
-{ "type": "error", "payload": { "message": "..." } }
+{ "type": "browser.run", "payload": { "spaceId": "...", "pageId": "...", "script": "await tools.fill('#q', 'hermes'); await tools.click('#submit'); await tools.waitForLoad(); return await tools.snapshot();" } }
 ```
+
+Response:
+```json
+{ "type": "browser.ran", "payload": { "pageId": "...", "ok": true, "result": "<value your script returned>", "logs": ["<console.log lines>"] } }
+```
+On a thrown error or a timeout (10s default), `ok` is `false` and `error`
+holds the message instead of `result`:
+```json
+{ "type": "browser.ran", "payload": { "pageId": "...", "ok": false, "error": "...", "logs": [] } }
+```
+Rejected with a top-level `error` message (not `browser.ran`) if `spaceId`/`pageId` doesn't resolve to a page owned by that Space.
+
+### Tools available inside the script
+
+| Function | Signature | Returns | Maps to |
+|---|---|---|---|
+| `snapshot` | `snapshot(): Promise<string>` | An AI-readable text tree of the page's accessibility structure (roles, names, nesting) | `page.locator('body').ariaSnapshot({ mode: 'ai' })` |
+| `click` | `click(selector: string): Promise<void>` | — | `page.click(selector)` |
+| `fill` | `fill(selector: string, text: string): Promise<void>` | — | `page.fill(selector, text)` |
+| `scroll` | `scroll(deltaX: number, deltaY: number): Promise<void>` | — | `page.mouse.wheel(deltaX, deltaY)` |
+| `waitForLoad` | `waitForLoad(): Promise<void>` | Resolves once the page reaches network-idle | `page.waitForLoadState('networkidle')` |
+| `url` | `url(): string` | The page's current URL (not a Promise, but safe to `await`) | `page.url()` |
+| `title` | `title(): Promise<string>` | The page's `<title>` | `page.title()` |
+| `capture` | `capture(): Promise<string>` | A base64-encoded PNG screenshot | `page.screenshot()` |
+
+`console.log(...)` inside the script is captured into the response's `logs`
+array (joined per call) instead of printing anywhere — use it for
+mid-workflow debugging without a second round-trip.
+
+### What the sandbox does and doesn't guarantee
+
+The script runs in a Node [`vm`](https://nodejs.org/api/vm.html) context
+exposing only `tools` and `console` — no `require`, `process`, or `fs` in
+scope. This catches accidental mistakes (typos, runaway loops via the
+timeout) in a trusted agent's own script. **It is not a hardened security
+sandbox** — Node's own docs say `vm` should not be used to run untrusted
+code — and the WebSocket protocol has no authentication of its own. Don't
+point `browser.run` at scripts from a source you don't already trust.

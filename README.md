@@ -43,6 +43,7 @@ Priority order for maximum traction:
 - [x] Manual validation flow
 - [ ] Linux packaging
 - [x] Chrome profile import
+- [x] Agent tool surface
 - [ ] Benchmark harness
 - [ ] Session recording/replay
 - [ ] Privacy mode
@@ -121,6 +122,35 @@ request it only when the task explicitly needs the human's own account.
 `importProfile: true` sees a cookie set on the human's context; one without
 it doesn't.
 
+### Agent tool surface
+
+The point of this project's protocol isn't "one WebSocket message per
+click" — an agent should read the page, act, wait, and read again as **one
+execution pass**, not a round-trip loop. `browser.run` does that: it sends
+one JS snippet, which runs against a page with a `tools` object in scope
+(`snapshot`, `click`, `fill`, `scroll`, `waitForLoad`, `url`, `title`,
+`capture` — each maps to one Playwright `Page` call; exact signatures in
+[`skills/ego-browser/references/tool-reference.md`](skills/ego-browser/references/tool-reference.md)),
+and gets back one structured result — the return value, any `console.log`
+output, and whether it threw or timed out (10s default).
+
+- `src/agent/tool-session.ts` — `runAgentScript(page, script, timeoutMs?)`
+  builds the `tools` object bound to that page, wraps the script in an
+  `async () => { ... }`, and runs it in a Node [`vm`](https://nodejs.org/api/vm.html)
+  context exposing only `tools` and a log-capturing `console` (no
+  `require`/`process`/`fs`).
+- `src/space/isolation.ts` — `getPage(spaceId, pageId)` resolves a page only
+  if it's owned by that Space (same guard as `close`), so `browser.run`
+  can't reach into another Space's or the human's pages.
+
+**This is not a hardened sandbox.** Node's own docs say `vm` isn't a
+security mechanism, and the protocol has no authentication — a `browser.run`
+script has the same practical reach as the server process itself. It stops
+accidental damage (typos, infinite loops, stray Node-global access — all
+covered by tests in `tests/unit/tool-session.test.ts`), not a determined
+attacker. `skills/ego-browser/SKILL.md`'s Safety section tells agents to
+treat scripts accordingly.
+
 ### WebSocket protocol + agent skill wiring
 
 `npm run dev:electron` (part of `npm run dev`) now starts both the shared
@@ -129,7 +159,7 @@ Chromium browser and the protocol server, listening on
 
 - `protocol/messages.ts` — a `zod` discriminated union of every client
   message (`space.create`, `space.close`, `browser.open`, `browser.list`,
-  `browser.close`) with its payload shape; `parseClientMessage(raw)`
+  `browser.close`, `browser.run`) with its payload shape; `parseClientMessage(raw)`
   parses and validates raw text, returning either the typed message or an
   error string.
 - `protocol/ws-server.ts` — parses every incoming message through
@@ -234,12 +264,67 @@ that opens nothing, so that's deferred until the UI lands.
 
 ## Install
 
+Three setups, depending on what you need. All three start from the same
+clone + install step; each adds on top of the previous one.
+
+### 1. Minimal runtime
+
+Just the protocol server and shared Chromium — enough for an agent to
+create Spaces and drive pages. No UI, no test tooling.
+
 ```bash
 git clone https://github.com/rhyovar/hermes-agent-browser.git
 cd hermes-agent-browser
-./scripts/install.sh
-npm run dev
+./scripts/install.sh   # npm install + fetch Playwright's Chromium build
+npm run dev:electron   # launches the shared Chromium + ws://127.0.0.1:8765
 ```
+
+What you get: one Chromium process, a blank window for the human, and the
+WebSocket server accepting `space.create`/`browser.open`/`browser.run`/etc.
+(full reference: [skills/ego-browser/references/tool-reference.md](skills/ego-browser/references/tool-reference.md)).
+Every Space starts with an empty cookie jar. Nothing else is running.
+
+### 2. With Chrome profile import
+
+The minimal runtime, plus a one-time manual step so a Space can inherit the
+human's real logins via `importProfile: true` (see
+[Chrome profile import](#chrome-profile-import) above).
+
+```bash
+./scripts/install.sh
+npm run dev:electron
+# in the Chromium window that opens: log into whatever sites a Space
+# should be able to reach, then Ctrl+C in the terminal to stop —
+# this saves cookies/localStorage to ~/.hermes-agent-browser/human.storage-state.json
+npm run dev:electron   # relaunch; the human context reloads that saved session
+```
+
+What you get: everything from the minimal runtime, plus a human session
+persisted to disk. Any Space created with `importProfile: true` snapshots
+it into its own context the first time it opens a page. Skipping the manual
+login step isn't an error — `importProfile: true` on an empty session just
+seeds an empty one.
+
+### 3. Full dev setup
+
+For working on `hermes-agent-browser` itself: the app running, its (still
+empty — `ui/` doesn't exist yet, see Repo layout) Vite dev server, and the
+test tooling.
+
+```bash
+./scripts/install.sh
+npm run dev        # dev:electron + dev:ui together
+npm test           # vitest; set HERMES_HEADLESS=true to run with no display
+npm run validate   # docs/MANUAL_VALIDATION.md's interactive CLI (needs dev:electron running)
+```
+
+What you get: everything from the minimal runtime, plus the Vite dev
+server on `http://localhost:4173` (a no-op today — there's no `ui/` yet to
+serve), and the commands used to verify a change: `npm test` (unit tests,
+see `tests/unit/`) and `npm run validate` for the manual walkthrough in
+`docs/MANUAL_VALIDATION.md`. `npm run lint` is in `package.json` but
+currently broken on this ESLint version (missing `eslint.config.js`) —
+pre-existing, not something this setup fixes.
 
 ## Contributing
 

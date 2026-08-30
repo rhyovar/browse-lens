@@ -23,6 +23,9 @@ const HELP = `commands:
   open <spaceId> <url>        open a page owned by a Space
   list <spaceId>              list pages owned by a Space
   close <spaceId> <pageId>    close a page (only if owned by that Space)
+  run <spaceId> <pageId> <script>   run one JS snippet against a page
+                                     (tools.snapshot/click/fill/scroll/
+                                     waitForLoad/url/title/capture in scope)
   help                        show this again
   quit                        disconnect and exit`;
 
@@ -81,6 +84,11 @@ rl.on('line', (line) => {
     case 'close':
       send('browser.close', { spaceId: rest[0], pageId: rest[1] });
       break;
+    case 'run': {
+      const [spaceId, pageId, ...scriptParts] = rest;
+      send('browser.run', { spaceId, pageId, script: scriptParts.join(' ') });
+      break;
+    }
     default:
       console.log(`unknown command: ${cmd}`);
   }

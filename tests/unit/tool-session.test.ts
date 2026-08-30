@@ -1,0 +1,108 @@
+import { describe, it, expect, afterAll } from 'vitest';
+
+process.env.HERMES_HEADLESS = 'true';
+
+const { closeBrowser } = await import('../../src/browser/context.js');
+const { SpaceIsolation } = await import('../../src/space/isolation.js');
+const { runAgentScript } = await import('../../src/agent/tool-session.js');
+
+async function openPage(isolation: InstanceType<typeof SpaceIsolation>, url: string) {
+  await isolation.open('space-a', url);
+  const [{ id }] = isolation.list('space-a');
+  const page = isolation.getPage('space-a', id);
+  if (!page) throw new Error('page not found right after opening it');
+  return page;
+}
+
+describe('runAgentScript', () => {
+  afterAll(async () => {
+    await closeBrowser();
+  });
+
+  it('exposes tools.url() and tools.title()', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'https://example.com');
+
+    const outcome = await runAgentScript(page, 'return { url: tools.url(), title: await tools.title() };');
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome).toMatchObject({ result: { url: 'https://example.com/' } });
+    expect((outcome as { result: { title: string } }).result.title).toContain('Example');
+    await isolation.closeAll('space-a');
+  });
+
+  it('composes fill + click + a follow-up read in one pass', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.setContent(
+      '<input id="name" /><button id="btn" onclick="document.title = document.getElementById(\'name\').value">Go</button>'
+    );
+
+    const outcome = await runAgentScript(
+      page,
+      `
+      await tools.fill('#name', 'hermes');
+      await tools.click('#btn');
+      return await tools.title();
+      `
+    );
+
+    expect(outcome).toMatchObject({ ok: true, result: 'hermes' });
+    await isolation.closeAll('space-a');
+  });
+
+  it('returns a page snapshot as a string', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.setContent('<button>Click me</button>');
+
+    const outcome = await runAgentScript(page, 'return await tools.snapshot();');
+
+    expect(outcome.ok).toBe(true);
+    expect(typeof (outcome as { result: unknown }).result).toBe('string');
+    expect((outcome as { result: string }).result).toContain('Click me');
+    await isolation.closeAll('space-a');
+  });
+
+  it('captures console.log calls without touching real stdout', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+
+    const outcome = await runAgentScript(page, "console.log('step', 1); return 'done';");
+
+    expect(outcome.logs).toEqual(['step 1']);
+    await isolation.closeAll('space-a');
+  });
+
+  it('reports a thrown error instead of crashing the server', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+
+    const outcome = await runAgentScript(page, "throw new Error('boom');");
+
+    expect(outcome.ok).toBe(false);
+    expect((outcome as { error: string }).error).toContain('boom');
+    await isolation.closeAll('space-a');
+  });
+
+  it('times out a script that never resolves', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+
+    const outcome = await runAgentScript(page, 'await new Promise(() => {});', 200);
+
+    expect(outcome.ok).toBe(false);
+    expect((outcome as { error: string }).error).toMatch(/timed out/);
+    await isolation.closeAll('space-a');
+  }, 10_000);
+
+  it('does not expose Node globals like process or require', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+
+    const outcome = await runAgentScript(page, 'return { proc: typeof process, req: typeof require };');
+
+    expect(outcome).toMatchObject({ ok: true, result: { proc: 'undefined', req: 'undefined' } });
+    await isolation.closeAll('space-a');
+  });
+});

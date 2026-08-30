@@ -1,6 +1,7 @@
 import { WebSocketServer, type WebSocket } from 'ws';
 import { SpaceRegistry } from '../space/registry.js';
 import { spaceIsolation } from '../space/isolation.js';
+import { runAgentScript } from '../agent/tool-session.js';
 import { parseClientMessage } from './messages.js';
 
 const wss = new WebSocketServer({ port: 8765 });
@@ -57,6 +58,16 @@ wss.on('connection', (ws: WebSocket) => {
       case 'browser.close': {
         const closed = await spaceIsolation.close(msg.payload.spaceId, msg.payload.pageId);
         send(ws, 'browser.closed', { pageId: msg.payload.pageId, closed });
+        break;
+      }
+      case 'browser.run': {
+        const page = spaceIsolation.getPage(msg.payload.spaceId, msg.payload.pageId);
+        if (!page) {
+          error(ws, `unknown page: ${msg.payload.pageId}`);
+          break;
+        }
+        const outcome = await runAgentScript(page, msg.payload.script);
+        send(ws, 'browser.ran', { pageId: msg.payload.pageId, ...outcome });
         break;
       }
       default: {

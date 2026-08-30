@@ -52,6 +52,13 @@ export class SpaceIsolation {
     return { id, spaceId, url: page.url() };
   }
 
+  /** Returns undefined if the page doesn't exist or belongs to a different Space. */
+  getPage(spaceId: string, pageId: string): Page | undefined {
+    const entry = this.pages.get(pageId);
+    if (!entry || entry.spaceId !== spaceId) return undefined;
+    return entry.page;
+  }
+
   list(spaceId: string): SpacePage[] {
     return Array.from(this.pages.entries())
       .filter(([, entry]) => entry.spaceId === spaceId)

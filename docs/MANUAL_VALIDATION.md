@@ -92,7 +92,20 @@ the Chromium windows after each `open`/`close` step.
 15. `space create demo-d` (no `--import`), then open the same URL there.
     - **Check:** this one is *not* logged in / has no `probe` cookie —
       confirming import is opt-in, not automatic.
-16. `quit` to exit the CLI. Stop the app with `Ctrl+C` in the first
+16. `space create demo-e`, note the `id` as `E`, then
+    `open E https://example.com`, note the page `id` as `P2`.
+17. `run E P2 return await tools.title();`
+    - **Check:** the response is `browser.ran` with `result: "Example Domain"` —
+      one script, one round-trip, no separate snapshot/act/read messages.
+18. `run E P2 return await tools.snapshot();`
+    - **Check:** `result` is a text tree mentioning the page's visible
+      content (headings, links) — this is what an agent reads to decide
+      what to click next.
+19. `run E P2 throw new Error('boom');`
+    - **Check:** the response has `ok: false` and `error` containing
+      `"boom"` — a thrown error comes back as data, not a dropped
+      connection.
+20. `quit` to exit the CLI. Stop the app with `Ctrl+C` in the first
     terminal — this saves the human's session (cookies/localStorage) to
     `~/.hermes-agent-browser/human.storage-state.json` so it's there next
     time; killing the process instead (`kill -9`) skips that save.
@@ -109,6 +122,9 @@ the Chromium windows after each `open`/`close` step.
   Space operations.
 - Closing a Space tears down exactly its own window (pages, cookies,
   storage) and nothing else.
+- `browser.run` (steps 17–19) does a whole read-act-read workflow in one
+  message, and a thrown error inside the script comes back as `ok: false`
+  rather than crashing the connection.
 - No step above required restarting the app.
 
 If any check fails, it's a regression in `src/space/isolation.ts`,
