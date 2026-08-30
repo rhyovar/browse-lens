@@ -33,6 +33,31 @@ Priority order for maximum traction:
 8. **Plugin ecosystem** — community npm packages for prebuilt agent behaviors.
 9. **Hermes skill** — make `browse-lens` the easiest agent integration path.
 
+All nine landed (see Progress below); each subsection further down notes
+what it deliberately didn't build. That deferred work is the v2 backlog —
+a draft, not yet prioritized or scoped, surfaced from gaps found across
+this work rather than invented fresh:
+
+1. **Agent CLI** — the most-repeated finding below: there's no
+   purpose-built way for an agent to drive BrowseLens besides hand-built
+   WebSocket JSON. A real CLI (mirroring `agent-browser`'s shape) is
+   probably the single biggest lever left for the item-9 goal above.
+2. General allow/block domain list (Privacy mode's fast-follow).
+3. New `tools.*` sandbox functions — `scrapeTable()`, `waitForElement()`,
+   `downloadFile()`, `monitorNetwork()`, `injectScript()`,
+   `extractJSON()` (Plugin system's fast-follow).
+4. New WS message types — `session.export`/`import`, `proxy.configure`,
+   `auth.inject`, `HAR.export` (also from Plugin system's scoping).
+5. Video/trace recording (Session recording's fast-follow).
+6. Multi-page session replay (Session recording's known limitation).
+7. Real `browser-use` benchmark numbers — the goal-driven adapter never
+   completed a live run in this sandbox (see Benchmark harness).
+8. `agent-browser` benchmark reliability — intermittent CDP timeouts when
+   run concurrently with BrowseLens's own Chromium (see Benchmark
+   harness); unclear yet if that's sandbox-specific.
+9. Electron desktop shell / `ui/` — blocks full Linux packaging (see
+   Linux stability / packaging).
+
 ## Progress
 
 - [x] Repo scaffold
@@ -49,6 +74,7 @@ Priority order for maximum traction:
 - [x] Session recording/replay
 - [x] Privacy mode (blocklist; general allow/block list still open)
 - [x] Plugin system (script library; new sandbox tools / new WS messages deferred)
+- [x] Hermes skill polish (frontmatter/structure; agent CLI still a gap, see below)
 - [ ] README/docs updates as features land
 
 ### Playwright Chromium runtime
@@ -117,7 +143,7 @@ regardless of the flag.
 
 This is opt-in and off by default — inheriting the human's real logins into
 an agent-controlled context is a real trust boundary, not just a
-convenience. `skills/browse-lens/SKILL.md`'s Safety section tells agents to
+convenience. `skills/browse-lens/SKILL.md`'s Pitfalls section tells agents to
 request it only when the task explicitly needs the human's own account.
 `tests/unit/isolation.test.ts` proves both directions: a Space created with
 `importProfile: true` sees a cookie set on the human's context; one without
@@ -149,7 +175,7 @@ security mechanism, and the protocol has no authentication — a `browser.run`
 script has the same practical reach as the server process itself. It stops
 accidental damage (typos, infinite loops, stray Node-global access — all
 covered by tests in `tests/unit/tool-session.test.ts`), not a determined
-attacker. `skills/browse-lens/SKILL.md`'s Safety section tells agents to
+attacker. `skills/browse-lens/SKILL.md`'s Pitfalls section tells agents to
 treat scripts accordingly.
 
 ### WebSocket protocol + agent skill wiring
@@ -273,6 +299,33 @@ with a value containing both `"` and `'` in live testing), and a working
 template plugin in
 [`examples/browselens-plugin-example`](examples/browselens-plugin-example)
 are in [docs/PLUGINS.md](docs/PLUGINS.md).
+
+### Hermes skill polish
+
+`skills/browse-lens/SKILL.md` now matches the real Hermes skill
+convention, checked against the actual validator and dozens of live
+example skills on a machine that runs Hermes (not guessed from the
+format alone): full frontmatter (`version`, `author`, `license`,
+`platforms: [linux, macos]` — audited against what the repo's scripts
+actually use (`install.sh` is bash, which rules out native Windows, but
+runs fine on macOS — no genuinely Linux-only code found in `src/`), not
+copied from the README's "Linux-native" branding; `metadata.hermes.{tags,
+related_skills}`), a `description` cut from 226 chars to 53 (the
+ecosystem norm is ≤60 — the skill picker truncates at 57), and the body
+restructured into the standard section order (`When to Use` /
+`Prerequisites` / `How to Run` / `Quick Reference` / `Procedure` /
+`Pitfalls` / `Verification`).
+
+The `How to Run` section's exact `terminal(command="node -e ...")`
+one-liner was run against a live server and confirmed to work verbatim.
+
+**Still an open gap, not fixed here**: there's no dedicated agent-facing
+CLI, so an agent must hand-build WebSocket JSON (or `write_file` a short
+Node script for anything needing more than one exchange) — the SKILL.md
+says this plainly in `Pitfalls` rather than pretending otherwise.
+`scripts/manual-validate.mjs` is explicitly called out as a human
+debugging tool, not something to route agent traffic through. Building a
+real agent CLI is a separate, larger piece of work than a docs pass.
 
 ### Manual validation flow
 

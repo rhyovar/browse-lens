@@ -27,7 +27,7 @@ one-time snapshot of the human's current session, taken when the Space's
 first page is opened (`browser.open`) — not at `space.create` time, and not
 a live link (later changes on either side don't sync). Everything else
 about the Space works the same; this only changes what its first
-`BrowserContext` starts with. See the Safety section in
+`BrowserContext` starts with. See the Pitfalls section in
 [../SKILL.md](../SKILL.md) before requesting it.
 
 ### Session recording
