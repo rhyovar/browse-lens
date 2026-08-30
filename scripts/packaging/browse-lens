@@ -1,0 +1,10 @@
+#!/bin/bash
+# BrowseLens agent CLI wrapper — calls the bundled cli.mjs
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CLI_MJS="$(cd "$SCRIPT_DIR/../.." && pwd)/cli.mjs"
+if [ ! -f "$CLI_MJS" ]; then
+  echo "Error: BrowseLens not found at $CLI_MJS" >&2
+  echo "Install BrowseLens first, or run cli.mjs directly from the repo." >&2
+  exit 1
+fi
+exec node "$CLI_MJS" "$@"
