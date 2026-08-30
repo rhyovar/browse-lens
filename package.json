@@ -34,6 +34,7 @@
     "@playwright/test": "^1.55.0",
     "@types/node": "^24.0.0",
     "@types/ws": "^8.5.0",
+    "agent-browser": "^0.35.1",
     "concurrently": "^9.1.0",
     "electron": "^36.0.0",
     "eslint": "^9.17.0",

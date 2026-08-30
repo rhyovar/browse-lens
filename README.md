@@ -176,20 +176,37 @@ for agents, with the full request/response reference in
 ### Benchmark harness
 
 `npm run benchmark` (`scripts/benchmark.mjs`, methodology in
-[docs/BENCHMARK.md](docs/BENCHMARK.md)) runs a small, fixed corpus of
-deterministic tasks — open a URL, click a known selector, fill a form
-field, scrape a table cell — against a local static fixture page, over
-`browser.run`, and checks each with an explicit code-level pass/fail
-function. No LLM judge. It reports pass/fail and the wall-clock time of
-just the `browser.run` round-trip per task.
+[docs/BENCHMARK.md](docs/BENCHMARK.md)) runs a small, fixed corpus of 4
+tasks — open a URL, click a known selector, fill a form field, scrape a
+table cell — against a local static fixture page, and checks each with an
+explicit code-level pass/fail function. No LLM judge.
 
-Rows for `browser-use` and `agent-browser` currently report `skipped`
-rather than fabricated numbers: `browser-use` isn't installed here and is
-fundamentally LLM-driven (making a "run this exact deterministic script"
-adapter a real design question, not just plumbing), and "agent-browser"
-doesn't unambiguously name one package yet. See
-[docs/BENCHMARK.md](docs/BENCHMARK.md#why-browser-use-and-agent-browser-show-skipped)
-for what a real adapter needs.
+Two methodologies, deliberately:
+
+- **BrowseLens** and **agent-browser** (the
+  [vercel-labs CLI](https://agent-browser.dev), a devDependency) are given
+  the exact same fixed steps for each task, over `browser.run` and the
+  `agent-browser` CLI respectively — this measures execution, not
+  decision-making.
+- **browser-use** is given each task's goal in plain English and its own
+  LLM decides the action sequence (via `scripts/browser_use_task.py`, a
+  separate Python venv at `.venv-browser-use/` — setup in
+  [docs/BENCHMARK.md](docs/BENCHMARK.md#setup-for-agent-browser-and-browser-use)).
+  These numbers aren't a speed ranking against the other two — it's
+  answering a different, harder question (can it figure out the goal at
+  all), so the doc reports it side by side rather than on one leaderboard.
+
+Both `agent-browser` and `browser-use` report `skipped` (not a fabricated
+pass/fail) when their setup isn't present — no CLI binary, no venv, or (for
+`browser-use`) no LLM API key configured. Two real reliability findings
+from wiring this up, documented in
+[docs/BENCHMARK.md](docs/BENCHMARK.md#a-real-reliability-caveat-found-while-wiring-this-up):
+`agent-browser` showed intermittent CDP timeouts specifically when run
+*concurrently* with BrowseLens's own headless Chromium in this sandbox
+(passed reliably standalone), and `browser-use`'s own `BrowserSession`
+never got past a repeating WebSocket-reconnect cycle here even with no LLM
+involved — so its goal-driven path is implemented against its real API but
+unverified end-to-end.
 
 ### Manual validation flow
 
