@@ -6,3 +6,4 @@ dist
 .hermes-agent-browser
 .DS_Store
 *.log
+release/
