@@ -47,7 +47,7 @@ Priority order for maximum traction:
 - [x] Agent tool surface
 - [x] Benchmark harness
 - [x] Session recording/replay
-- [ ] Privacy mode
+- [x] Privacy mode (blocklist; general allow/block list still open)
 - [ ] Plugin system
 - [ ] README/docs updates as features land
 
@@ -232,6 +232,23 @@ Video/trace recording (wrapping Playwright's or `agent-browser`'s built-in
 capture) is an intentionally deferred follow-up — this transcript format
 covers the debugging and diffing use cases on its own.
 
+### Privacy mode
+
+`privacy: true` on `space.create` blocks ~30 known telemetry/tracking
+domains (analytics, ads, session-replay, error monitoring — full list and
+what's deliberately excluded in [docs/PRIVACY.md](docs/PRIVACY.md)) in
+that Space's `BrowserContext`, via
+[`src/browser/telemetry-blocklist.ts`](src/browser/telemetry-blocklist.ts)'s
+`context.route()` handler. Off by default; applied once when the context
+is first created, same timing as `importProfile`.
+
+This is a fixed blocklist, not a general allow/block list — that's a
+deliberate scope decision: a per-Space allowlist/blocklist changes the
+Space's entire default-allow-vs-default-deny security model, which
+shouldn't be decided without real usage data. The blocklist is the
+bounded, low-risk piece that proves the `context.route()` wiring; the
+general list is planned as a fast-follow once that's proven out.
+
 ### Manual validation flow
 
 Automated tests run headless and can't confirm the actual point of this
@@ -282,7 +299,8 @@ that opens nothing, so that's deferred until the UI lands.
 │   ├── browser/
 │   │   ├── chromium.ts
 │   │   ├── profile.ts
-│   │   └── context.ts
+│   │   ├── context.ts
+│   │   └── telemetry-blocklist.ts
 │   ├── space/
 │   │   ├── space.ts
 │   │   ├── registry.ts
@@ -309,7 +327,8 @@ that opens nothing, so that's deferred until the UI lands.
 ├── docs/
 │   ├── MANUAL_VALIDATION.md
 │   ├── BENCHMARK.md
-│   └── RECORDING.md
+│   ├── RECORDING.md
+│   └── PRIVACY.md
 ├── skills/
 │   └── browse-lens/
 │       ├── SKILL.md

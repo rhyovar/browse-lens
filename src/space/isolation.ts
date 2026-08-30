@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import type { BrowserContext, Page } from 'playwright';
 import { ensureBrowser, ensureHumanContext } from '../browser/chromium.js';
+import { blockTelemetry } from '../browser/telemetry-blocklist.js';
 
 export interface SpacePage {
   id: string;
@@ -17,6 +18,13 @@ export interface GetContextOptions {
    * link — later changes to the human's session aren't reflected back.
    */
   importProfile?: boolean;
+  /**
+   * Block known telemetry/tracking domains (see
+   * src/browser/telemetry-blocklist.ts) in this Space's context. Only
+   * matters the first time a Space's context is created, same as
+   * importProfile.
+   */
+  privacy?: boolean;
 }
 
 /**
@@ -37,6 +45,9 @@ export class SpaceIsolation {
         ? await (await ensureHumanContext()).storageState()
         : undefined;
       ctx = await browser.newContext({ storageState, viewport: { width: 1440, height: 900 } });
+      if (options.privacy) {
+        await blockTelemetry(ctx);
+      }
       this.contexts.set(spaceId, ctx);
     }
     return ctx;

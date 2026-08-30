@@ -7,4 +7,6 @@ export interface Space {
   importProfile: boolean;
   /** If true, every browser.run call in this Space is recorded to .transcripts/<sessionId>.jsonl. */
   record: boolean;
+  /** If true, the Space's BrowserContext blocks known telemetry/tracking domains (see src/browser/telemetry-blocklist.ts). */
+  privacy: boolean;
 }

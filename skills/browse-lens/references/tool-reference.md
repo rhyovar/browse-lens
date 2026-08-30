@@ -9,15 +9,15 @@ the same shapes.
 
 Request:
 ```json
-{ "type": "space.create", "payload": { "name": "freelance-scan", "importProfile": false, "record": false } }
+{ "type": "space.create", "payload": { "name": "freelance-scan", "importProfile": false, "record": false, "privacy": false } }
 ```
-`name` is optional (defaults to `"untitled"`). `importProfile` and `record`
-are both optional and default to `false` — see "Chrome profile import" and
-"Session recording" below.
+`name` is optional (defaults to `"untitled"`). `importProfile`, `record`,
+and `privacy` are all optional and default to `false` — see "Chrome
+profile import", "Session recording", and "Privacy mode" below.
 
 Response: `space.created` with the new `Space`:
 ```json
-{ "type": "space.created", "payload": { "id": "...", "name": "freelance-scan", "createdAt": 0, "active": true, "importProfile": false, "record": false } }
+{ "type": "space.created", "payload": { "id": "...", "name": "freelance-scan", "createdAt": 0, "active": true, "importProfile": false, "record": false, "privacy": false } }
 ```
 
 ### Chrome profile import
@@ -37,6 +37,13 @@ about the Space works the same; this only changes what its first
 `browser.open`) followed by one JSON line per call (script, result,
 timing), in order. See [../../docs/RECORDING.md](../../docs/RECORDING.md)
 for the schema and for `npm run replay`/`npm run diff`.
+
+### Privacy mode
+
+`privacy: true` blocks ~30 known telemetry/tracking domains (analytics,
+ads, session-replay, error monitoring) in this Space's `BrowserContext`,
+applied once when the context is first created. Full list and rationale
+in [../../docs/PRIVACY.md](../../docs/PRIVACY.md).
 
 ## space.close
 

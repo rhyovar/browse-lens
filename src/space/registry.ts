@@ -5,7 +5,7 @@ import { spaceIsolation } from './isolation.js';
 export class SpaceRegistry {
   private spaces = new Map<string, Space>();
 
-  create(name: string, importProfile = false, record = false): Space {
+  create(name: string, importProfile = false, record = false, privacy = false): Space {
     const id = randomUUID();
     const space: Space = {
       id,
@@ -13,7 +13,8 @@ export class SpaceRegistry {
       createdAt: Date.now(),
       active: true,
       importProfile,
-      record
+      record,
+      privacy
     };
     this.spaces.set(id, space);
     return space;

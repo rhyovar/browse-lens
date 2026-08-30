@@ -5,7 +5,8 @@ const SpaceCreate = z.object({
   payload: z.object({
     name: z.string().min(1).optional(),
     importProfile: z.boolean().optional(),
-    record: z.boolean().optional()
+    record: z.boolean().optional(),
+    privacy: z.boolean().optional()
   })
 });
 

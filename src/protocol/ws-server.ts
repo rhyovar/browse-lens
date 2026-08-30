@@ -30,7 +30,8 @@ wss.on('connection', (ws: WebSocket) => {
         const space = registry.create(
           msg.payload.name ?? 'untitled',
           msg.payload.importProfile ?? false,
-          msg.payload.record ?? false
+          msg.payload.record ?? false,
+          msg.payload.privacy ?? false
         );
         if (space.record) {
           startRecording(space.id, space.importProfile);
@@ -51,7 +52,8 @@ wss.on('connection', (ws: WebSocket) => {
           break;
         }
         const opened = await spaceIsolation.open(msg.payload.spaceId, msg.payload.url, {
-          importProfile: space.importProfile
+          importProfile: space.importProfile,
+          privacy: space.privacy
         });
         if (space.record) {
           getRecorder(space.id)?.recordOpen(msg.payload.url);
