@@ -1,4 +1,4 @@
-import { randomUUID } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { Space } from './space.js';
 
 export class SpaceRegistry {

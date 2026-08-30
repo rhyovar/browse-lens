@@ -1,8 +1,7 @@
-import { ensureBrowser } from '../browser/chromium.js';
-import { registry } from './registry.js';
+import { ensureContext } from '../browser/chromium.js';
 
 export async function bootstrap() {
-  const browser = await ensureBrowser();
+  const context = await ensureContext();
   console.log('browser ready');
-  return browser;
+  return context;
 }

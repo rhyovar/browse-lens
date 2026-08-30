@@ -18,6 +18,33 @@ Core promise:
 
 Scaffolded. Repo created, structure planned. Implementation handoff queued for nick-white.
 
+## Progress
+
+- [x] Repo scaffold
+- [ ] Branch protection
+- [x] Playwright Chromium runtime
+- [ ] Space isolation
+- [ ] WebSocket protocol
+- [ ] Agent skill wiring
+- [ ] Manual validation flow
+
+### Playwright Chromium runtime
+
+`src/browser/` launches a single Playwright-managed, persistent Chromium
+context backed by a profile at `~/.hermes-agent-browser/chromium-profile`,
+so the human and any connected agents share one browser instance and its
+logged-in state:
+
+- `profile.ts` — resolves and creates the persistent profile directory.
+- `context.ts` — lazily launches the shared `BrowserContext` and memoizes it
+  so repeated calls reuse the same Chromium instance; `closeContext()` tears
+  it down.
+- `chromium.ts` — `openTarget(url)` opens a new tab in the shared context
+  and navigates to `url`.
+
+Set `HERMES_HEADLESS=true` to run headless (used by the test suite).
+Run `npx playwright install chromium` once to fetch the browser binary.
+
 ## Repo layout
 
 ```

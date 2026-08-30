@@ -1,5 +1,5 @@
 import { WebSocketServer, type WebSocket } from 'ws';
-import { SpaceRegistry } from './registry.js';
+import { SpaceRegistry } from '../space/registry.js';
 import { openTarget } from '../browser/chromium.js';
 
 const wss = new WebSocketServer({ port: 8765 });
