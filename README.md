@@ -39,7 +39,7 @@ a draft, not yet prioritized or scoped, surfaced from gaps found across
 this work rather than invented fresh:
 
 1. ~~Agent CLI~~ — done, see Agent CLI subsection above.
-2. General allow/block domain list (Privacy mode's fast-follow).
+2. ~~General allow/block domain list~~ — done, see Privacy mode subsection above.
 3. New `tools.*` sandbox functions — `scrapeTable()`, `waitForElement()`,
    `downloadFile()`, `monitorNetwork()`, `injectScript()`,
    `extractJSON()` (Plugin system's fast-follow).
@@ -258,19 +258,26 @@ covers the debugging and diffing use cases on its own.
 ### Privacy mode
 
 `privacy: true` on `space.create` blocks ~30 known telemetry/tracking
-domains (analytics, ads, session-replay, error monitoring — full list and
-what's deliberately excluded in [docs/PRIVACY.md](docs/PRIVACY.md)) in
-that Space's `BrowserContext`, via
+domains (analytics, ads, session-replay, error monitoring). `space.create`
+also takes general `allowlist`/`blocklist` arrays (v2-backlog item 2,
+picked up right after the Agent CLI) — **default-allow**: `blocklist`
+alone blocks just those domains, `allowlist` alone flips that Space to
+allow-only-those, both together let `blocklist` win on a shared domain,
+and `privacy: true` merges the built-in list into whatever `blocklist` is
+also passed. All enforced by one `context.route()` handler in
 [`src/browser/telemetry-blocklist.ts`](src/browser/telemetry-blocklist.ts)'s
-`context.route()` handler. Off by default; applied once when the context
-is first created, same timing as `importProfile`.
+`applyNetworkPolicy`, applied once when the context is first created (same
+timing as `importProfile`). Full behavior, the default-allow-vs-default-deny
+rationale, and the domain list: [docs/PRIVACY.md](docs/PRIVACY.md).
 
-This is a fixed blocklist, not a general allow/block list — that's a
-deliberate scope decision: a per-Space allowlist/blocklist changes the
-Space's entire default-allow-vs-default-deny security model, which
-shouldn't be decided without real usage data. The blocklist is the
-bounded, low-risk piece that proves the `context.route()` wiring; the
-general list is planned as a fast-follow once that's proven out.
+**A real bug found while testing this live**: opening a page to a
+policy-blocked URL made `page.goto()` throw, and the `browser.open`
+handler didn't catch it — an unhandled rejection that **crashed the
+entire server process**, not just that one request. Every connected
+client would've gone down from one blocked `open` call. Fixed by wrapping
+that call in a try/catch and returning a normal top-level `error` instead;
+verified the server now stays up and keeps serving other requests after a
+blocked open.
 
 ### Plugin system
 

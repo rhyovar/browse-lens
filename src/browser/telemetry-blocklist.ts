@@ -52,15 +52,43 @@ export const TELEMETRY_DOMAINS: readonly string[] = [
   'datadoghq.com'
 ];
 
-export function isTelemetryHost(hostname: string): boolean {
-  return TELEMETRY_DOMAINS.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
+function hostMatches(hostname: string, domains: readonly string[]): boolean {
+  return domains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
 }
 
-/** Aborts every request to a domain in TELEMETRY_DOMAINS for this context. */
-export async function blockTelemetry(context: BrowserContext): Promise<void> {
+export function isTelemetryHost(hostname: string): boolean {
+  return hostMatches(hostname, TELEMETRY_DOMAINS);
+}
+
+export interface NetworkPolicyOptions {
+  /** Merge the built-in TELEMETRY_DOMAINS into the effective blocklist. */
+  privacy?: boolean;
+  /** If non-empty, only these domains (and their subdomains) are allowed — default-allow otherwise. */
+  allowlist?: string[];
+  /** Domains blocked outright, merged with TELEMETRY_DOMAINS when privacy is also true. */
+  blocklist?: string[];
+}
+
+/**
+ * Applies a Space's network policy to its BrowserContext in one route
+ * handler: default-allow (everything passes) unless `allowlist` is
+ * non-empty (then only matching domains pass) or a domain matches the
+ * effective blocklist (custom `blocklist` plus TELEMETRY_DOMAINS when
+ * `privacy` is set) — blocklist wins over allowlist. A no-op (registers no
+ * handler) if none of `privacy`/`allowlist`/`blocklist` is set.
+ */
+export async function applyNetworkPolicy(context: BrowserContext, options: NetworkPolicyOptions = {}): Promise<void> {
+  const { privacy = false, allowlist = [], blocklist = [] } = options;
+  if (!privacy && allowlist.length === 0 && blocklist.length === 0) return;
+
+  const effectiveBlocklist = privacy ? [...TELEMETRY_DOMAINS, ...blocklist] : blocklist;
+
   await context.route('**/*', (route) => {
     const hostname = new URL(route.request().url()).hostname;
-    if (isTelemetryHost(hostname)) {
+    if (hostMatches(hostname, effectiveBlocklist)) {
+      return route.abort();
+    }
+    if (allowlist.length > 0 && !hostMatches(hostname, allowlist)) {
       return route.abort();
     }
     return route.continue();

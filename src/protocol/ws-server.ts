@@ -32,7 +32,9 @@ wss.on('connection', (ws: WebSocket) => {
           msg.payload.name ?? 'untitled',
           msg.payload.importProfile ?? false,
           msg.payload.record ?? false,
-          msg.payload.privacy ?? false
+          msg.payload.privacy ?? false,
+          msg.payload.allowlist ?? [],
+          msg.payload.blocklist ?? []
         );
         if (space.record) {
           startRecording(space.id, space.importProfile);
@@ -52,10 +54,18 @@ wss.on('connection', (ws: WebSocket) => {
           error(ws, `unknown space: ${msg.payload.spaceId}`);
           break;
         }
-        const opened = await spaceIsolation.open(msg.payload.spaceId, msg.payload.url, {
-          importProfile: space.importProfile,
-          privacy: space.privacy
-        });
+        let opened;
+        try {
+          opened = await spaceIsolation.open(msg.payload.spaceId, msg.payload.url, {
+            importProfile: space.importProfile,
+            privacy: space.privacy,
+            allowlist: space.allowlist,
+            blocklist: space.blocklist
+          });
+        } catch (err) {
+          error(ws, `could not open ${msg.payload.url}: ${(err as Error).message}`);
+          break;
+        }
         if (space.record) {
           getRecorder(space.id)?.recordOpen(msg.payload.url);
         }

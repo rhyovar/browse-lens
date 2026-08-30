@@ -13,15 +13,16 @@ wraps.
 
 Request:
 ```json
-{ "type": "space.create", "payload": { "name": "freelance-scan", "importProfile": false, "record": false, "privacy": false } }
+{ "type": "space.create", "payload": { "name": "freelance-scan", "importProfile": false, "record": false, "privacy": false, "allowlist": [], "blocklist": [] } }
 ```
 `name` is optional (defaults to `"untitled"`). `importProfile`, `record`,
-and `privacy` are all optional and default to `false` — see "Chrome
+and `privacy` are optional booleans defaulting to `false`; `allowlist` and
+`blocklist` are optional string arrays defaulting to `[]` — see "Chrome
 profile import", "Session recording", and "Privacy mode" below.
 
 Response: `space.created` with the new `Space`:
 ```json
-{ "type": "space.created", "payload": { "id": "...", "name": "freelance-scan", "createdAt": 0, "active": true, "importProfile": false, "record": false, "privacy": false } }
+{ "type": "space.created", "payload": { "id": "...", "name": "freelance-scan", "createdAt": 0, "active": true, "importProfile": false, "record": false, "privacy": false, "allowlist": [], "blocklist": [] } }
 ```
 
 ### Chrome profile import
@@ -45,9 +46,17 @@ for the schema and for `npm run replay`/`npm run diff`.
 ### Privacy mode
 
 `privacy: true` blocks ~30 known telemetry/tracking domains (analytics,
-ads, session-replay, error monitoring) in this Space's `BrowserContext`,
-applied once when the context is first created. Full list and rationale
-in [../../docs/PRIVACY.md](../../docs/PRIVACY.md).
+ads, session-replay, error monitoring). `allowlist`/`blocklist` add a
+general, agent-supplied domain policy on top: **default-allow** —
+`blocklist` alone blocks just those domains; `allowlist` alone flips that
+Space to allow-only-those-domains; both together let `blocklist` win over
+`allowlist` on a shared domain; `privacy: true` merges the built-in list
+into whatever `blocklist` you also pass. All applied once when the
+context is first created. Full behavior, the default-allow rationale, and
+the domain list in [../../docs/PRIVACY.md](../../docs/PRIVACY.md).
+
+Opening a page blocked by the Space's own policy comes back as a normal
+top-level `error` (not a crash) — see `browser.open` below.
 
 ## space.close
 
@@ -75,7 +84,9 @@ Response: `browser.opened` with the new page, owned by `spaceId`:
 { "type": "browser.opened", "payload": { "id": "...", "spaceId": "...", "url": "https://example.com/" } }
 ```
 
-Rejected with an `error` message if `spaceId` doesn't exist.
+Rejected with an `error` message if `spaceId` doesn't exist, or if the
+Space's own `privacy`/`allowlist`/`blocklist` policy blocks the URL
+(navigation fails cleanly rather than crashing the connection).
 
 ## browser.list
 

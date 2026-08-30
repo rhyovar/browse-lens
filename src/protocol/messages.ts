@@ -6,7 +6,9 @@ const SpaceCreate = z.object({
     name: z.string().min(1).optional(),
     importProfile: z.boolean().optional(),
     record: z.boolean().optional(),
-    privacy: z.boolean().optional()
+    privacy: z.boolean().optional(),
+    allowlist: z.array(z.string()).optional(),
+    blocklist: z.array(z.string()).optional()
   })
 });
 

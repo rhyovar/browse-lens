@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import type { BrowserContext, Page } from 'playwright';
 import { ensureBrowser, ensureHumanContext } from '../browser/chromium.js';
-import { blockTelemetry } from '../browser/telemetry-blocklist.js';
+import { applyNetworkPolicy } from '../browser/telemetry-blocklist.js';
 
 export interface SpacePage {
   id: string;
@@ -25,6 +25,10 @@ export interface GetContextOptions {
    * importProfile.
    */
   privacy?: boolean;
+  /** Domains allowed in this Space's context — if non-empty, everything else is blocked (default-allow otherwise). */
+  allowlist?: string[];
+  /** Domains blocked in this Space's context, merged with the built-in telemetry list when privacy is also true. */
+  blocklist?: string[];
 }
 
 /**
@@ -45,9 +49,11 @@ export class SpaceIsolation {
         ? await (await ensureHumanContext()).storageState()
         : undefined;
       ctx = await browser.newContext({ storageState, viewport: { width: 1440, height: 900 } });
-      if (options.privacy) {
-        await blockTelemetry(ctx);
-      }
+      await applyNetworkPolicy(ctx, {
+        privacy: options.privacy,
+        allowlist: options.allowlist,
+        blocklist: options.blocklist
+      });
       this.contexts.set(spaceId, ctx);
     }
     return ctx;

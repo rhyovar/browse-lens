@@ -56,7 +56,7 @@ Full command list: `npx browse-lens --help`. Full message/response shapes
 
 | Command | Message | Response |
 |---|---|---|
-| `browse-lens create <name> [--import] [--record] [--privacy]` | `space.create` | the new Space |
+| `browse-lens create <name> [--import] [--record] [--privacy] [--allow <domains>] [--block <domains>]` | `space.create` | the new Space |
 | `browse-lens open <spaceId> <url>` | `browser.open` | the new page |
 | `browse-lens run <spaceId> <pageId> <script...>` | `browser.run` | `{ ok, result \| error, logs }` |
 | `browse-lens run <spaceId> <pageId> --plugin <pkg> --script-name <name> [--params <json>]` | `browser.run` (plugin) | same as above |
@@ -88,6 +88,13 @@ Full command list: `npx browse-lens --help`. Full message/response shapes
 - **No protocol authentication.** Anything that can reach
   `ws://127.0.0.1:8765` has full control. Don't expose the port beyond
   localhost.
+- **Network policy is default-allow.** `--allow`/`--block` (or nothing)
+  leave a Space open to the whole internet by default. `--block` alone
+  blocks just those domains; `--allow` alone flips that Space to
+  allow-only-those; both together let `--block` win on a shared domain.
+  Details: [docs/PRIVACY.md](../../docs/PRIVACY.md). `open`ing a URL the
+  Space's own policy blocks fails cleanly (non-zero exit, printed error),
+  not a crash.
 - **`browser.run` sandboxing is partial.** Scripts run in a Node `vm`
   context (no `require`/`process`/`fs`), which stops accidental damage, not
   a determined attacker — Node's own docs say `vm` isn't a security

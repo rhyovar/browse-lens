@@ -25,7 +25,7 @@ Requires the protocol server running first:
 
 | Command | Sends | Notes |
 |---|---|---|
-| `create <name> [--import] [--record] [--privacy]` | `space.create` | flags map to `importProfile`/`record`/`privacy`, all off by default |
+| `create <name> [--import] [--record] [--privacy] [--allow <domains>] [--block <domains>]` | `space.create` | flags map to `importProfile`/`record`/`privacy`/`allowlist`/`blocklist`, all off/empty by default; `<domains>` is comma-separated |
 | `open <spaceId> <url>` | `browser.open` | |
 | `run <spaceId> <pageId> <script...>` | `browser.run` | everything after `<pageId>` is joined with spaces as the script |
 | `run <spaceId> <pageId> --plugin <package> --script-name <name> [--params <json>]` | `browser.run` (plugin form) | `--params` is a JSON string, parsed before sending |
@@ -54,6 +54,13 @@ pretty-printed JSON to stdout. Exit code is `0` unless:
   and reported "connection refused" for a simple usage mistake).
 - **Usage errors** (missing/invalid arguments, unknown command) — printed
   to stderr with a `usage:` line, exit `1`, no connection attempted.
+- **`open` against a URL the Space's own network policy blocks**
+  (`--privacy`/`--allow`/`--block`, see [PRIVACY.md](PRIVACY.md)) —
+  reported as a normal protocol-level `error`, exit `1`. This used to crash
+  the whole server (an unhandled rejection from the underlying
+  `page.goto()` failure) until fixed while testing the allow/block list
+  live — worth knowing since it means an older build could take down every
+  connected client from one blocked `open` call.
 
 ## Example session
 

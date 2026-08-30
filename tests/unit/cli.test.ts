@@ -6,7 +6,22 @@ describe('cli buildMessage', () => {
     const built = buildMessage('create', ['task', '--import', '--privacy']);
     expect(built).toEqual({
       type: 'space.create',
-      payload: { name: 'task', importProfile: true, record: false, privacy: true }
+      payload: { name: 'task', importProfile: true, record: false, privacy: true, allowlist: [], blocklist: [] }
+    });
+  });
+
+  it('builds space.create with comma-separated allow/block lists', () => {
+    const built = buildMessage('create', ['task', '--allow', 'a.com, b.com', '--block', 'c.com']);
+    expect(built).toEqual({
+      type: 'space.create',
+      payload: {
+        name: 'task',
+        importProfile: false,
+        record: false,
+        privacy: false,
+        allowlist: ['a.com', 'b.com'],
+        blocklist: ['c.com']
+      }
     });
   });
 

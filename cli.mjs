@@ -14,7 +14,8 @@ const WS_URL = process.env.HERMES_WS_URL ?? 'ws://127.0.0.1:8765';
 const USAGE = `browse-lens: agent CLI for BrowseLens (ws://127.0.0.1:8765)
 
 Usage:
-  browse-lens create <name> [--import] [--record] [--privacy]
+  browse-lens create <name> [--import] [--record] [--privacy] [--allow <domains>] [--block <domains>]
+                                       # <domains> is a comma-separated list
   browse-lens open <spaceId> <url>
   browse-lens run <spaceId> <pageId> <script...>
   browse-lens run <spaceId> <pageId> --plugin <package> --script-name <name> [--params <json>]
@@ -54,6 +55,15 @@ function nextMessage(ws) {
   });
 }
 
+function parseCsvFlag(args, flag) {
+  const index = args.indexOf(flag);
+  if (index === -1) return [];
+  return (args[index + 1] ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 function parseCreateArgs(args) {
   const flags = new Set(args.filter((a) => a.startsWith('--')));
   const name = args.find((a) => !a.startsWith('--'));
@@ -61,7 +71,9 @@ function parseCreateArgs(args) {
     name,
     importProfile: flags.has('--import'),
     record: flags.has('--record'),
-    privacy: flags.has('--privacy')
+    privacy: flags.has('--privacy'),
+    allowlist: parseCsvFlag(args, '--allow'),
+    blocklist: parseCsvFlag(args, '--block')
   };
 }
 
@@ -89,9 +101,14 @@ const RUN_USAGE =
 export function buildMessage(command, args) {
   switch (command) {
     case 'create': {
-      const { name, importProfile, record, privacy } = parseCreateArgs(args);
-      if (!name) return { usageError: 'usage: browse-lens create <name> [--import] [--record] [--privacy]' };
-      return { type: 'space.create', payload: { name, importProfile, record, privacy } };
+      const { name, importProfile, record, privacy, allowlist, blocklist } = parseCreateArgs(args);
+      if (!name) {
+        return {
+          usageError:
+            'usage: browse-lens create <name> [--import] [--record] [--privacy] [--allow <domains>] [--block <domains>]'
+        };
+      }
+      return { type: 'space.create', payload: { name, importProfile, record, privacy, allowlist, blocklist } };
     }
     case 'open': {
       const [spaceId, url] = args;
