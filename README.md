@@ -197,6 +197,14 @@ hydration state — and throws a clean, selector-naming error instead of a
 raw `SyntaxError` when the text isn't valid JSON. `downloadFile()`,
 `monitorNetwork()`, and `injectScript()` remain unbuilt.
 
+Live testing surfaced a real gotcha, not just a fixture quirk: chaining
+`waitForSelector` in front of `extractJSON` breaks on the most common
+target, a `<script>` tag (JSON-LD, `__NEXT_DATA__`) — `waitForSelector`'s
+default `state` is `'visible'`, and script elements are never visible, so
+the wait times out even once the JSON is present. Documented in
+`tool-reference.md`; the example plugin's `extractEmbeddedJSON` script
+deliberately skips the wait rather than composing a broken combination.
+
 **This is not a hardened sandbox.** Node's own docs say `vm` isn't a
 security mechanism, and the protocol has no authentication — a `browser.run`
 script has the same practical reach as the server process itself. It stops

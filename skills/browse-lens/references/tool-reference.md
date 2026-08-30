@@ -199,6 +199,15 @@ JSON, throws a clean error naming the selector instead of a raw
 fetch anything over the network — the selector must already point at the
 element holding the JSON text.
 
+**Don't chain `waitForSelector` in front of `extractJSON` on a `<script>`
+element.** `waitForSelector`'s default `state` is `'visible'`, and a
+`<script>` tag is never visible — the wait will time out even once the
+element is in the DOM with valid JSON inside it. This is the common case
+for `extractJSON` (JSON-LD, `__NEXT_DATA__`, and similar are always
+`<script>`-wrapped), so for those, either poll `extractJSON` directly in a
+small retry loop inside your own script, or wait on a *visible* sibling
+that signals the data has loaded.
+
 ### What the sandbox does and doesn't guarantee
 
 The script runs in a Node [`vm`](https://nodejs.org/api/vm.html) context

@@ -27,9 +27,14 @@ export default {
       return await tools.scrapeTable(${JSON.stringify(params.selector)});
     `,
 
-    /** Waits for embedded JSON to render, then extracts it. params: { selector, timeoutMs? }. */
-    waitAndExtractJSON: (params) => `
-      await tools.waitForSelector(${JSON.stringify(params.selector)}, ${JSON.stringify(params.timeoutMs ?? 5000)});
+    /**
+     * Extracts embedded JSON, e.g. a <script type="application/ld+json">
+     * block or a framework's hydration state. Does NOT wait first —
+     * waitForSelector's default 'visible' state never resolves for a
+     * <script> element (they're never visible), so this only works once
+     * the element is already in the DOM. params: { selector }.
+     */
+    extractEmbeddedJSON: (params) => `
       return await tools.extractJSON(${JSON.stringify(params.selector)});
     `
   }
