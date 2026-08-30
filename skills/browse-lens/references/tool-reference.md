@@ -146,7 +146,7 @@ Rejected with a top-level `error` message (not `browser.ran`) if `spaceId`/`page
 both or neither is rejected):
 
 ```json
-{ "type": "browser.run", "payload": { "spaceId": "...", "pageId": "...", "plugin": { "package": "browselens-plugin-example", "name": "readTitle", "params": {} } } }
+{ "type": "browser.run", "payload": { "spaceId": "...", "pageId": "...", "plugin": { "package": "browse-lens-plugin-example", "name": "readTitle", "params": {} } } }
 ```
 
 The server resolves `plugin.package`'s named script (an installed npm

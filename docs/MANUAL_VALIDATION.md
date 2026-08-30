@@ -22,7 +22,7 @@ npm run dev:electron
 ```
 
 Confirm in the terminal:
-- `hermes-agent-browser protocol listening on ws://127.0.0.1:8765`
+- `browse-lens protocol listening on ws://127.0.0.1:8765`
 - `browser ready`
 
 One Chromium window should appear — this is the human's own context, empty
@@ -107,7 +107,7 @@ the Chromium windows after each `open`/`close` step.
       connection.
 20. `quit` to exit the CLI. Stop the app with `Ctrl+C` in the first
     terminal — this saves the human's session (cookies/localStorage) to
-    `~/.hermes-agent-browser/human.storage-state.json` so it's there next
+    `~/.browse-lens/human.storage-state.json` so it's there next
     time; killing the process instead (`kill -9`) skips that save.
 
 ## What "pass" looks like
@@ -150,7 +150,7 @@ After the CLI walkthrough above, confirm the Electron UI works:
      **Pages** section (empty if no pages were opened in it).
 7. Stop the Electron app with `Ctrl+C` in its terminal.
    - **Check:** the human's session is saved to
-     `~/.hermes-agent-browser/human.storage-state.json` (same as the
+     `~/.browse-lens/human.storage-state.json` (same as the
      CLI path).
 
 If the Electron window doesn't appear, check that `npm install` completed

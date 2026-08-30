@@ -3,12 +3,12 @@ import { resolveScript } from '../../src/agent/plugins.js';
 
 describe('resolveScript', () => {
   it('resolves a no-arg script from the example plugin', async () => {
-    const script = await resolveScript('browselens-plugin-example', 'readTitle', {});
+    const script = await resolveScript('browse-lens-plugin-example', 'readTitle', {});
     expect(script).toBe('return await tools.title();');
   });
 
   it('resolves a parameterized script, safely embedding params as JSON', async () => {
-    const script = await resolveScript('browselens-plugin-example', 'fillAndSubmit', {
+    const script = await resolveScript('browse-lens-plugin-example', 'fillAndSubmit', {
       selector: '#email',
       value: 'a"b\'c',
       submitSelector: '#go'
@@ -26,7 +26,7 @@ describe('resolveScript', () => {
   });
 
   it('throws a clear error for an unknown script name', async () => {
-    await expect(resolveScript('browselens-plugin-example', 'doesNotExist', {})).rejects.toThrow(
+    await expect(resolveScript('browse-lens-plugin-example', 'doesNotExist', {})).rejects.toThrow(
       /has no script named "doesNotExist"/
     );
   });

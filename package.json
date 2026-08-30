@@ -1,9 +1,10 @@
 {
-  "name": "hermes-agent-browser",
+  "name": "browse-lens",
   "private": true,
   "version": "0.1.0",
   "description": "BrowseLens: a Linux-native shared agent browser with isolated agent Spaces over one Chromium profile.",
   "type": "module",
+  "desktopName": "browselens",
   "license": "MIT",
   "author": {
     "name": "rhyovar",
@@ -16,10 +17,10 @@
   "engines": {
     "node": ">=20"
   },
-  "homepage": "https://github.com/rhyovar/hermes-agent-browser",
+  "homepage": "https://github.com/rhyovar/browse-lens",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rhyovar/hermes-agent-browser.git"
+    "url": "https://github.com/rhyovar/browse-lens.git"
   },
   "scripts": {
     "dev": "concurrently \"npm run dev:electron\" \"npm run dev:ui\"",
@@ -47,7 +48,7 @@
     "@types/node": "^24.0.0",
     "@types/ws": "^8.5.0",
     "agent-browser": "^0.35.1",
-    "browselens-plugin-example": "file:examples/browselens-plugin-example",
+    "browse-lens-plugin-example": "file:examples/browse-lens-plugin-example",
     "concurrently": "^9.1.0",
     "electron": "^36.0.0",
     "electron-builder": "^26.15.3",
@@ -73,12 +74,19 @@
       "examples/**/*",
       "LICENSE"
     ],
+    "extraFiles": [
+      {
+        "from": "scripts/packaging/browse-lens",
+        "to": "usr/bin/browse-lens"
+      }
+    ],
     "linux": {
       "target": [
         "AppImage",
         "deb"
       ],
-      "category": "Development"
+      "category": "Development",
+      "syncDesktopName": true
     },
     "publish": {
       "provider": "github"

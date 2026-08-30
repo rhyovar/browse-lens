@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 
 function baseDir(): string {
-  const dir = path.join(os.homedir(), '.hermes-agent-browser');
+  const dir = path.join(os.homedir(), '.browse-lens');
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }

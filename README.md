@@ -1,7 +1,7 @@
 # BrowseLens
 
 BrowseLens is a Linux-native shared agent browser for Hermes (repo:
-`hermes-agent-browser`).
+`browse-lens`).
 
 One Chromium process. Isolated agent Spaces, each in their own window with their own cookies/storage. Your tabs stay yours. Agents drive the browser through a controlled JS surface without fighting over shared browsing data.
 
@@ -83,7 +83,7 @@ and every agent Space run in it, each in their own `BrowserContext` (see
 Space isolation below) rather than one shared context:
 
 - `profile.ts` — resolves `storageStatePath(name)`, where a context's
-  cookies/localStorage get persisted (`~/.hermes-agent-browser/<name>.storage-state.json`).
+  cookies/localStorage get persisted (`~/.browse-lens/<name>.storage-state.json`).
 - `context.ts` — `ensureBrowser()` lazily launches the shared `Browser` and
   memoizes it; `ensureHumanContext()` lazily creates the human's own
   `BrowserContext` (loading its storageState from disk if present);
@@ -183,7 +183,7 @@ extracts `{ headers, rows }` from the first element matching a selector
 (normally a `<table>`) using `HTMLTableElement.rows` — a header row is
 detected only if every one of its cells is a `<th>`, so it handles plain,
 `<thead>`/`<tbody>`, and header-less tables the same way. Both verified
-live end-to-end, including through `examples/browselens-plugin-example`'s
+live end-to-end, including through `examples/browse-lens-plugin-example`'s
 new `waitAndScrapeTable` script (wait for a table to appear, then scrape
 it, in one plugin call).
 
@@ -355,7 +355,7 @@ weren't needed to solve the problem in front of us. Full authoring guide,
 the safe-param-interpolation rule (`JSON.stringify` everything — verified
 with a value containing both `"` and `'` in live testing), and a working
 template plugin in
-[`examples/browselens-plugin-example`](examples/browselens-plugin-example)
+[`examples/browse-lens-plugin-example`](examples/browse-lens-plugin-example)
 are in [docs/PLUGINS.md](docs/PLUGINS.md).
 
 ### Hermes skill polish
@@ -490,7 +490,7 @@ that opens nothing, so that's deferred until the UI lands.
 │   ├── replay.mjs
 │   └── diff.mjs
 ├── examples/
-│   └── browselens-plugin-example/
+│   └── browse-lens-plugin-example/
 │       ├── package.json
 │       └── index.js
 ├── docs/
@@ -531,8 +531,8 @@ Just the protocol server and shared Chromium — enough for an agent to
 create Spaces and drive pages. No UI, no test tooling.
 
 ```bash
-git clone https://github.com/rhyovar/hermes-agent-browser.git
-cd hermes-agent-browser
+git clone https://github.com/rhyovar/browse-lens.git
+cd browse-lens
 ./scripts/install.sh   # npm install + fetch Playwright's Chromium build
 npm run dev:electron   # launches the shared Chromium + ws://127.0.0.1:8765
 ```
@@ -553,7 +553,7 @@ human's real logins via `importProfile: true` (see
 npm run dev:electron
 # in the Chromium window that opens: log into whatever sites a Space
 # should be able to reach, then Ctrl+C in the terminal to stop —
-# this saves cookies/localStorage to ~/.hermes-agent-browser/human.storage-state.json
+# this saves cookies/localStorage to ~/.browse-lens/human.storage-state.json
 npm run dev:electron   # relaunch; the human context reloads that saved session
 ```
 
@@ -565,7 +565,7 @@ seeds an empty one.
 
 ### 3. Full dev setup
 
-For working on `hermes-agent-browser` itself: the Electron app with its
+For working on `browse-lens` itself: the Electron app with its
 dark-themed UI, the protocol server, and the test tooling.
 
 ```bash
@@ -588,7 +588,7 @@ something this setup fixes.
 ### 4. Packaged install (no build needed)
 
 Download a pre-built package from
-[GitHub Releases](https://github.com/rhyovar/hermes-agent-browser/releases)
+[GitHub Releases](https://github.com/rhyovar/browse-lens/releases)
 and skip the source build entirely.
 
 - **AppImage**: download `BrowseLens-0.1.0.AppImage`, make it executable,
@@ -597,9 +597,9 @@ and skip the source build entirely.
   chmod +x BrowseLens-0.1.0.AppImage
   ./BrowseLens-0.1.0.AppImage
   ```
-- **deb**: download `hermes-agent-browser_0.1.0_amd64.deb` and install it:
+- **deb**: download `browse-lens_0.1.0_amd64.deb` and install it:
   ```bash
-  sudo dpkg -i hermes-agent-browser_0.1.0_amd64.deb
+  sudo dpkg -i browse-lens_0.1.0_amd64.deb
   ```
 
 Both packages bundle the Chromium runtime and protocol server; no Node.js

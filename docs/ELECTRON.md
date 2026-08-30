@@ -19,7 +19,7 @@ browser in real time.
 
 When the last Electron window closes, the app calls the same shutdown
 handler (`closeBrowser().finally(() => process.exit(0))`), saving the
-human's session to `~/.hermes-agent-browser/human.storage-state.json`.
+human's session to `~/.browse-lens/human.storage-state.json`.
 
 ## How to run
 
@@ -85,7 +85,7 @@ Output lands in `release/` (configured via `directories.output` in
 `package.json`'s `build` block):
 
 - **AppImage**: `release/BrowseLens-0.1.0.AppImage` (~118 MB)
-- **deb**: `release/hermes-agent-browser_0.1.0_amd64.deb` (~92 MB)
+- **deb**: `release/browse-lens_0.1.0_amd64.deb` (~92 MB)
 
 An `linux-unpacked/` directory is also written to `release/` for debugging.
 
@@ -99,7 +99,7 @@ chmod +x release/BrowseLens-0.1.0.AppImage
 ### Installing the deb
 
 ```bash
-sudo dpkg -i release/hermes-agent-browser_0.1.0_amd64.deb
+sudo dpkg -i release/browse-lens_0.1.0_amd64.deb
 ```
 
 ### Troubleshooting

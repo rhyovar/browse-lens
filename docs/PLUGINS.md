@@ -26,7 +26,7 @@ Reference it from `browser.run` with `plugin` instead of `script`:
   "payload": {
     "spaceId": "...",
     "pageId": "...",
-    "plugin": { "package": "browselens-plugin-example", "name": "readTitle" }
+    "plugin": { "package": "browse-lens-plugin-example", "name": "readTitle" }
   }
 }
 ```
@@ -42,7 +42,7 @@ runs. `plugin.params` is optional:
     "spaceId": "...",
     "pageId": "...",
     "plugin": {
-      "package": "browselens-plugin-example",
+      "package": "browse-lens-plugin-example",
       "name": "fillAndSubmit",
       "params": { "selector": "#email", "value": "test@example.com", "submitSelector": "#go" }
     }
@@ -74,7 +74,7 @@ has no `default`) must be:
 
 Each function returns exactly the JS you'd otherwise put in `browser.run`'s
 `script` field. See
-[`examples/browselens-plugin-example`](../examples/browselens-plugin-example)
+[`examples/browse-lens-plugin-example`](../examples/browse-lens-plugin-example)
 for a working, minimal template (installed in this repo as a
 `file:`-referenced devDependency so `tests/unit/plugins.test.ts` can
 exercise real npm resolution, not a mock).

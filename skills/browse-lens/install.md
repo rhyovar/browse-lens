@@ -1,14 +1,14 @@
 # Installing BrowseLens
 
-BrowseLens lives in the `hermes-agent-browser` repo. One script handles
+BrowseLens lives in the `browse-lens` repo. One script handles
 install for every setup below: `./scripts/install.sh` checks for Node
 `>=20`, runs `npm install`, and fetches Playwright's Chromium build
 (trying `playwright install --with-deps` on apt-based distros, falling
 back to a browser-only install elsewhere).
 
 ```bash
-git clone https://github.com/rhyovar/hermes-agent-browser.git
-cd hermes-agent-browser
+git clone https://github.com/rhyovar/browse-lens.git
+cd browse-lens
 ./scripts/install.sh
 ```
 

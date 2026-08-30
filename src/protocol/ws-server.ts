@@ -129,4 +129,4 @@ wss.on('connection', (ws: WebSocket) => {
   });
 });
 
-console.log('hermes-agent-browser protocol listening on ws://127.0.0.1:8765');
+console.log('browse-lens protocol listening on ws://127.0.0.1:8765');

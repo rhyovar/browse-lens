@@ -16,7 +16,7 @@ metadata:
 Drives a shared Chromium process over a local WebSocket protocol, one
 isolated Space per task (own cookie jar/localStorage, never the human's or
 another Space's). Not for human-only browsing — this is the agent-facing
-surface of the `hermes-agent-browser` repo.
+surface of the `browse-lens` repo.
 
 ## When to Use
 
@@ -30,7 +30,7 @@ skill's entire surface is browser automation, not a general web-fetch tool.
 
 ## Prerequisites
 
-- `hermes-agent-browser` cloned; `./scripts/install.sh` run once (installs
+- `browse-lens` cloned; `./scripts/install.sh` run once (installs
   npm deps and Playwright's Chromium build). If you just want to use
   BrowseLens as a desktop app, download the AppImage or deb from
   [GitHub Releases](https://github.com/rhyovar/hermes-agent-browser/releases)
