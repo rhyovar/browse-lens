@@ -116,6 +116,29 @@ with `npm run validate` (`scripts/manual-validate.mjs`, an interactive CLI
 over the WebSocket protocol) while watching the Chromium window to confirm
 Spaces can't see or close each other's tabs, or the human's.
 
+### Linux stability / packaging (in progress)
+
+`scripts/install.sh` is a single Linux install step: it checks for a
+supported Node (`engines.node` in `package.json` requires `>=20`; the
+`skills/ego-browser` requirement previously and incorrectly said `>=24.14`
+— nothing in this repo needs that), runs `npm install`, and fetches
+Playwright's Chromium build. On apt-based distros it also tries
+`playwright install --with-deps` for the OS-level Chromium libraries,
+falling back to a browser-only install (with a note to install those
+libraries manually) if that needs root it doesn't have.
+
+```bash
+./scripts/install.sh
+npm run dev
+```
+
+Still open: this only makes `npm install`/`npm run dev` reliable across
+distros. It does not yet produce an installable Linux package (AppImage/deb)
+— that needs an actual Electron desktop shell (a `BrowserWindow` loading
+`ui/`) to package, and `ui/` doesn't exist yet (see Repo layout). Building
+`electron-builder` config against a nonexistent UI would just ship a package
+that opens nothing, so that's deferred until the UI lands.
+
 ## Repo layout
 
 ```
@@ -177,7 +200,7 @@ Spaces can't see or close each other's tabs, or the human's.
 ```bash
 git clone https://github.com/rhyovar/hermes-agent-browser.git
 cd hermes-agent-browser
-npm install
+./scripts/install.sh
 npm run dev
 ```
 

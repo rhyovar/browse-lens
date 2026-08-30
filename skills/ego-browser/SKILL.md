@@ -12,7 +12,7 @@ This skill connects a Hermes agent to the local `hermes-agent-browser` runtime.
 
 ## Requirements
 
-- Node.js >= 24.14
+- Node.js >= 20
 - Playwright-managed Chromium
 - Local protocol server running
 
@@ -20,7 +20,7 @@ This skill connects a Hermes agent to the local `hermes-agent-browser` runtime.
 
 ```bash
 cd hermes-agent-browser
-npm install
+./scripts/install.sh   # npm install + fetch Playwright's Chromium build
 npm run dev
 ```
 

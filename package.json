@@ -6,6 +6,9 @@
   "type": "module",
   "license": "MIT",
   "author": "rhyovar",
+  "engines": {
+    "node": ">=20"
+  },
   "homepage": "https://github.com/rhyovar/hermes-agent-browser",
   "repository": {
     "type": "git",
