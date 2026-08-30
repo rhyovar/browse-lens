@@ -1,14 +1,16 @@
 ---
-name: hermes-agent-browser
+name: browse-lens
 description: >
-  Linux-native shared agent browser for Hermes. Use when a Hermes agent needs
-  browser automation with shared login state and isolated agent Spaces.
-  Not for human-only browsing; for agent browser tasks under Hermes.
+  BrowseLens: a Linux-native shared agent browser for Hermes. Use when a
+  Hermes agent needs browser automation with shared login state and
+  isolated agent Spaces. Not for human-only browsing; for agent browser
+  tasks under Hermes.
 ---
 
-# Hermes Agent Browser
+# BrowseLens
 
-This skill connects a Hermes agent to the local `hermes-agent-browser` runtime.
+This skill connects a Hermes agent to the local BrowseLens runtime (repo:
+`hermes-agent-browser`).
 
 ## Requirements
 

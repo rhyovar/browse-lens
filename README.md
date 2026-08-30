@@ -1,6 +1,7 @@
-# Hermes Agent Browser
+# BrowseLens
 
-Linux-native shared agent browser for Hermes.
+BrowseLens is a Linux-native shared agent browser for Hermes (repo:
+`hermes-agent-browser`).
 
 One Chromium process. Isolated agent Spaces, each in their own window with their own cookies/storage. Your tabs stay yours. Agents drive the browser through a controlled JS surface without fighting over shared browsing data.
 
@@ -30,7 +31,7 @@ Priority order for maximum traction:
 6. **Session recording/replay** — record agent behavior, replay it, diff it.
 7. **Privacy mode** — per-space network restrictions and telemetry blocking.
 8. **Plugin ecosystem** — community npm packages for prebuilt agent behaviors.
-9. **Hermes skill** — make `ego-browser` the easiest agent integration path.
+9. **Hermes skill** — make `browse-lens` the easiest agent integration path.
 
 ## Progress
 
@@ -116,7 +117,7 @@ regardless of the flag.
 
 This is opt-in and off by default — inheriting the human's real logins into
 an agent-controlled context is a real trust boundary, not just a
-convenience. `skills/ego-browser/SKILL.md`'s Safety section tells agents to
+convenience. `skills/browse-lens/SKILL.md`'s Safety section tells agents to
 request it only when the task explicitly needs the human's own account.
 `tests/unit/isolation.test.ts` proves both directions: a Space created with
 `importProfile: true` sees a cookie set on the human's context; one without
@@ -130,7 +131,7 @@ execution pass**, not a round-trip loop. `browser.run` does that: it sends
 one JS snippet, which runs against a page with a `tools` object in scope
 (`snapshot`, `click`, `fill`, `scroll`, `waitForLoad`, `url`, `title`,
 `capture` — each maps to one Playwright `Page` call; exact signatures in
-[`skills/ego-browser/references/tool-reference.md`](skills/ego-browser/references/tool-reference.md)),
+[`skills/browse-lens/references/tool-reference.md`](skills/browse-lens/references/tool-reference.md)),
 and gets back one structured result — the return value, any `console.log`
 output, and whether it threw or timed out (10s default).
 
@@ -148,7 +149,7 @@ security mechanism, and the protocol has no authentication — a `browser.run`
 script has the same practical reach as the server process itself. It stops
 accidental damage (typos, infinite loops, stray Node-global access — all
 covered by tests in `tests/unit/tool-session.test.ts`), not a determined
-attacker. `skills/ego-browser/SKILL.md`'s Safety section tells agents to
+attacker. `skills/browse-lens/SKILL.md`'s Safety section tells agents to
 treat scripts accordingly.
 
 ### WebSocket protocol + agent skill wiring
@@ -168,9 +169,9 @@ Chromium browser and the protocol server, listening on
   `{ "type": "error", "payload": { "message": "..." } }` instead of
   crashing the connection or being silently ignored.
 
-`skills/ego-browser/SKILL.md` documents the spaceId-scoped message shapes
+`skills/browse-lens/SKILL.md` documents the spaceId-scoped message shapes
 for agents, with the full request/response reference in
-[`skills/ego-browser/references/tool-reference.md`](skills/ego-browser/references/tool-reference.md).
+[`skills/browse-lens/references/tool-reference.md`](skills/browse-lens/references/tool-reference.md).
 
 ### Manual validation flow
 
@@ -187,7 +188,7 @@ other's tabs, cookies, or the human's.
 
 `scripts/install.sh` is a single Linux install step: it checks for a
 supported Node (`engines.node` in `package.json` requires `>=20`; the
-`skills/ego-browser` requirement previously and incorrectly said `>=24.14`
+`skills/browse-lens` requirement previously and incorrectly said `>=24.14`
 — nothing in this repo needs that), runs `npm install`, and fetches
 Playwright's Chromium build. On apt-based distros it also tries
 `playwright install --with-deps` for the OS-level Chromium libraries,
@@ -244,7 +245,7 @@ that opens nothing, so that's deferred until the UI lands.
 ├── docs/
 │   └── MANUAL_VALIDATION.md
 ├── skills/
-│   └── ego-browser/
+│   └── browse-lens/
 │       ├── SKILL.md
 │       ├── install.md
 │       └── references/
@@ -281,7 +282,7 @@ npm run dev:electron   # launches the shared Chromium + ws://127.0.0.1:8765
 
 What you get: one Chromium process, a blank window for the human, and the
 WebSocket server accepting `space.create`/`browser.open`/`browser.run`/etc.
-(full reference: [skills/ego-browser/references/tool-reference.md](skills/ego-browser/references/tool-reference.md)).
+(full reference: [skills/browse-lens/references/tool-reference.md](skills/browse-lens/references/tool-reference.md)).
 Every Space starts with an empty cookie jar. Nothing else is running.
 
 ### 2. With Chrome profile import

@@ -1,4 +1,4 @@
-# Protocol reference
+# BrowseLens protocol reference
 
 WebSocket endpoint: `ws://127.0.0.1:8765`. Every message is JSON:
 `{ "type": "<type>", "payload": { ... } }`. The schemas below (enforced by

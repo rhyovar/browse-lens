@@ -2,7 +2,7 @@
   "name": "hermes-agent-browser",
   "private": true,
   "version": "0.1.0",
-  "description": "Linux-native shared agent browser: isolated agent Spaces over one Chromium profile.",
+  "description": "BrowseLens: a Linux-native shared agent browser with isolated agent Spaces over one Chromium profile.",
   "type": "module",
   "license": "MIT",
   "author": "rhyovar",
