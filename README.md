@@ -42,9 +42,9 @@ this work rather than invented fresh:
 2. ~~General allow/block domain list~~ — done, see Privacy mode subsection above.
 3. New `tools.*` sandbox functions (Plugin system's fast-follow) — shipped
    one at a time, not batched, to prove the mechanism before committing to
-   the rest. `waitForSelector()` and `scrapeTable()` done (see Agent tool
-   surface subsection above); `downloadFile()`, `monitorNetwork()`,
-   `injectScript()`, `extractJSON()` still unbuilt.
+   the rest. `waitForSelector()`, `scrapeTable()`, and `extractJSON()` done
+   (see Agent tool surface subsection above); `downloadFile()`,
+   `monitorNetwork()`, `injectScript()` still unbuilt.
 4. New WS message types — `session.export`/`import`, `proxy.configure`,
    `auth.inject`, `HAR.export` (also from Plugin system's scoping).
 5. Video/trace recording (Session recording's fast-follow).
@@ -155,7 +155,7 @@ click" — an agent should read the page, act, wait, and read again as **one
 execution pass**, not a round-trip loop. `browser.run` does that: it sends
 one JS snippet, which runs against a page with a `tools` object in scope
 (`snapshot`, `click`, `fill`, `scroll`, `waitForLoad`, `url`, `title`,
-`capture`, `waitForSelector`, `scrapeTable` — each maps to one Playwright
+`capture`, `waitForSelector`, `scrapeTable`, `extractJSON` — each maps to one Playwright
 `Page` call; exact signatures in
 [`skills/browse-lens/references/tool-reference.md`](skills/browse-lens/references/tool-reference.md)),
 and gets back one structured result — the return value, any `console.log`
@@ -186,6 +186,16 @@ detected only if every one of its cells is a `<th>`, so it handles plain,
 live end-to-end, including through `examples/browselens-plugin-example`'s
 new `waitAndScrapeTable` script (wait for a table to appear, then scrape
 it, in one plugin call).
+
+`extractJSON(selector)` is the third addition, picked over
+`downloadFile()`/`monitorNetwork()`/`injectScript()` as the highest-leverage,
+best-bounded remaining candidate — structured extraction with no
+filesystem or network trust boundary to design. It parses the `textContent`
+of the first element matching `selector` as JSON — e.g. a
+`<script type="application/ld+json">` block or a framework's embedded
+hydration state — and throws a clean, selector-naming error instead of a
+raw `SyntaxError` when the text isn't valid JSON. `downloadFile()`,
+`monitorNetwork()`, and `injectScript()` remain unbuilt.
 
 **This is not a hardened sandbox.** Node's own docs say `vm` isn't a
 security mechanism, and the protocol has no authentication — a `browser.run`
@@ -424,7 +434,8 @@ that opens nothing, so that's deferred until the UI lands.
 ├── cli.mjs
 ├── src/
 │   ├── main/
-│   │   └── index.ts
+│   │   ├── index.ts
+│   │   └── electron.ts
 │   ├── browser/
 │   │   ├── chromium.ts
 │   │   ├── profile.ts
@@ -464,7 +475,8 @@ that opens nothing, so that's deferred until the UI lands.
 │   ├── RECORDING.md
 │   ├── PRIVACY.md
 │   ├── PLUGINS.md
-│   └── CLI.md
+│   ├── CLI.md
+│   └── ELECTRON.md
 ├── skills/
 │   └── browse-lens/
 │       ├── SKILL.md
@@ -502,7 +514,7 @@ npm run dev:electron   # launches the shared Chromium + ws://127.0.0.1:8765
 ```
 
 What you get: one Chromium process, a blank window for the human, and the
-WebSocket server accepting `space.create`/`browser.open`/`browser.run`/etc.
+WebSocket server accepting `space.create`/`space.list`/`browser.open`/`browser.run`/etc.
 (full reference: [skills/browse-lens/references/tool-reference.md](skills/browse-lens/references/tool-reference.md)).
 Every Space starts with an empty cookie jar. Nothing else is running.
 
@@ -529,26 +541,25 @@ seeds an empty one.
 
 ### 3. Full dev setup
 
-For working on `hermes-agent-browser` itself: the app running, its (still
-empty — `ui/` doesn't exist yet, see Repo layout) Vite dev server, and the
-test tooling.
+For working on `hermes-agent-browser` itself: the Electron app with its
+dark-themed UI, the protocol server, and the test tooling.
 
 ```bash
 ./scripts/install.sh
-npm run dev        # dev:electron + dev:ui together
+npm run dev        # Electron app + Vite dev server
 npm test           # vitest; set HERMES_HEADLESS=true to run with no display
 npm run validate   # docs/MANUAL_VALIDATION.md's interactive CLI (needs dev:electron running)
 npm run benchmark  # docs/BENCHMARK.md's task corpus (also needs dev:electron running)
 ```
 
-What you get: everything from the minimal runtime, plus the Vite dev
-server on `http://localhost:4173` (a no-op today — there's no `ui/` yet to
-serve), and the commands used to verify a change: `npm test` (unit tests,
-see `tests/unit/`), `npm run validate` for the manual walkthrough in
-`docs/MANUAL_VALIDATION.md`, and `npm run benchmark` for the deterministic
-task corpus in `docs/BENCHMARK.md`. `npm run lint` is in `package.json` but
-currently broken on this ESLint version (missing `eslint.config.js`) —
-pre-existing, not something this setup fixes.
+What you get: everything from the minimal runtime, plus the Electron
+desktop shell loading `ui/index.html` (a dark-themed WebSocket client
+for managing Spaces and browsing pages). `npm run dev:ui` still runs the
+Vite dev server for future UI work, but the Electron window loads the UI
+directly from disk today. `npm run dev` runs both side by side via
+`concurrently`. `npm run lint` is in `package.json` but currently broken
+on this ESLint version (missing `eslint.config.js`) — pre-existing, not
+something this setup fixes.
 
 ## Contributing
 

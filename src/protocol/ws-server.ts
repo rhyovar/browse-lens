@@ -27,6 +27,10 @@ wss.on('connection', (ws: WebSocket) => {
     const msg = parsed.message;
 
     switch (msg.type) {
+      case 'space.list': {
+        send(ws, 'space.list', registry.list());
+        break;
+      }
       case 'space.create': {
         const space = registry.create(
           msg.payload.name ?? 'untitled',

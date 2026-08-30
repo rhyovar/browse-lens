@@ -19,9 +19,10 @@
   },
   "scripts": {
     "dev": "concurrently \"npm run dev:electron\" \"npm run dev:ui\"",
-    "dev:electron": "tsx src/main/index.ts",
+    "dev:electron": "electron -r tsx src/main/electron.ts",
     "dev:ui": "vite",
-    "build": "vite build && tsc -p tsconfig.json",
+    "build": "npm run build:ui && vite build && tsc -p tsconfig.json",
+    "build:ui": "tsc ui/app.ts --outDir ui --target ES2022 --module ESNext --moduleResolution Bundler --esModuleInterop --skipLibCheck --lib ES2022,DOM",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint src --ext .ts",

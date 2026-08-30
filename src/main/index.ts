@@ -8,15 +8,16 @@ export async function bootstrap() {
   return ctx;
 }
 
-const isMain = import.meta.url === `file://${process.argv[1]}`;
-if (isMain) {
-  bootstrap();
-
-  // Persisting the human's storageState only happens in closeBrowser(), so a
-  // bare kill/crash loses cookies/localStorage since the last graceful exit.
+export function installShutdownHandler() {
   const shutdown = () => {
     closeBrowser().finally(() => process.exit(0));
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
+}
+
+const isMain = import.meta.url === `file://${process.argv[1]}`;
+if (isMain) {
+  bootstrap();
+  installShutdownHandler();
 }

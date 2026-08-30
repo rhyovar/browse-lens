@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrowseLens</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <h1>BrowseLens</h1>
+        <span class="subtitle">Agent Browser</span>
+      </div>
+      <div class="status" id="status">Disconnected</div>
+    </header>
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Spaces</h2>
+        <button id="connectBtn" class="btn btn-primary">Connect</button>
+      </div>
+      <div class="create-space">
+        <input type="text" id="spaceName" placeholder="New space name..." autocomplete="off">
+        <button id="createSpaceBtn" class="btn btn-accent">Create Space</button>
+      </div>
+      <ul id="spaceList" class="space-list">
+        <li class="empty-state">No spaces yet</li>
+      </ul>
+    </aside>
+    <main class="main">
+      <div id="spaceDetails" class="space-details">
+        <div class="empty-state">Select a space to view details</div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

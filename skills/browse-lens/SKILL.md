@@ -49,6 +49,11 @@ terminal(command="npx browse-lens run <spaceId> <pageId> \"return await tools.ti
 terminal(command="npx browse-lens close <spaceId>")
 ```
 
+Or use the **Electron desktop shell** (`npm run dev`) for a visual
+dark-themed UI that connects to the same WebSocket server and lets you
+create Spaces, list pages, and open URLs without hand-building JSON.
+Full walkthrough: [docs/ELECTRON.md](../docs/ELECTRON.md).
+
 Full command list: `npx browse-lens --help`. Full message/response shapes
 (what the CLI wraps): [references/tool-reference.md](references/tool-reference.md).
 
@@ -67,7 +72,7 @@ Full command list: `npx browse-lens --help`. Full message/response shapes
 `tools` inside a `run` script: `snapshot()`, `click(selector)`,
 `fill(selector, text)`, `scroll(dx, dy)`, `waitForLoad()`, `url()`,
 `title()`, `capture()`, `waitForSelector(selector, timeoutMs?)`,
-`scrapeTable(selector)`.
+`scrapeTable(selector)`, `extractJSON(selector)`.
 
 ## Procedure
 

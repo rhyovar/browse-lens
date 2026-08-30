@@ -131,3 +131,27 @@ If any check fails, it's a regression in `src/space/isolation.ts`,
 `src/browser/context.ts`, or their wiring in `src/protocol/ws-server.ts` —
 see [../README.md](../README.md#space-isolation) for how that's supposed to
 work.
+
+## Electron desktop shell validation
+
+After the CLI walkthrough above, confirm the Electron UI works:
+
+1. Stop the validation CLI with `quit` (keep the server running).
+2. In a second terminal, run `npm run dev:electron` — this opens the
+   Electron window with the dark-themed UI.
+3. **Check:** the header shows **Connected** (green) within a couple
+   seconds of the window appearing.
+4. **Check:** the sidebar shows any Spaces you created during the CLI
+   walkthrough (`demo-a`, `demo-b`, etc.) — `space.list` is working.
+5. Type a name in the **New space name** input and click **Create Space**.
+   - **Check:** the new Space appears at the bottom of the sidebar.
+6. Click the new Space in the sidebar.
+   - **Check:** the main panel shows the Space's name, flags, and a
+     **Pages** section (empty if no pages were opened in it).
+7. Stop the Electron app with `Ctrl+C` in its terminal.
+   - **Check:** the human's session is saved to
+     `~/.hermes-agent-browser/human.storage-state.json` (same as the
+     CLI path).
+
+If the Electron window doesn't appear, check that `npm install` completed
+and Playwright's Chromium is installed (`npx playwright install`).

@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const SpaceList = z.object({
+  type: z.literal('space.list'),
+  payload: z.object({})
+});
+
 const SpaceCreate = z.object({
   type: z.literal('space.create'),
   payload: z.object({
@@ -52,6 +57,7 @@ const BrowserRun = z.object({
 });
 
 export const ClientMessage = z.discriminatedUnion('type', [
+  SpaceList,
   SpaceCreate,
   SpaceClose,
   BrowserOpen,
