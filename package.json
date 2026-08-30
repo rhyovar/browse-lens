@@ -18,7 +18,8 @@
     "build": "vite build && tsc -p tsconfig.json",
     "preview": "vite preview",
     "test": "vitest run",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "validate": "node scripts/manual-validate.mjs"
   },
   "dependencies": {
     "playwright": "^1.55.0",

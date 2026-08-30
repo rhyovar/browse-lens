@@ -18,6 +18,20 @@ Core promise:
 
 Scaffolded. Repo created, structure planned. Implementation handoff queued for nick-white.
 
+## Roadmap
+
+Priority order for maximum traction:
+
+1. **Linux stability** — make install + dev feel native on Ubuntu/Debian/Fedora/Arch.
+2. **Space isolation** — separate cookie jars, localStorage, and session state per agent.
+3. **Chrome profile import** — one-click migration so agents inherit real logins.
+4. **Agent tool surface** — JS functions called directly by agents, not CLI loops.
+5. **Benchmark harness** — reproducible comparisons against browser-use / agent-browser.
+6. **Session recording/replay** — record agent behavior, replay it, diff it.
+7. **Privacy mode** — per-space network restrictions and telemetry blocking.
+8. **Plugin ecosystem** — community npm packages for prebuilt agent behaviors.
+9. **Hermes skill** — make `ego-browser` the easiest agent integration path.
+
 ## Progress
 
 - [x] Repo scaffold
@@ -26,7 +40,14 @@ Scaffolded. Repo created, structure planned. Implementation handoff queued for n
 - [x] Space isolation
 - [x] WebSocket protocol
 - [x] Agent skill wiring
-- [ ] Manual validation flow
+- [x] Manual validation flow
+- [ ] Linux packaging
+- [ ] Chrome profile import
+- [ ] Benchmark harness
+- [ ] Session recording/replay
+- [ ] Privacy mode
+- [ ] Plugin system
+- [ ] README/docs updates as features land
 
 ### Playwright Chromium runtime
 
@@ -85,6 +106,16 @@ Chromium context and the protocol server, listening on
 for agents, with the full request/response reference in
 [`skills/ego-browser/references/tool-reference.md`](skills/ego-browser/references/tool-reference.md).
 
+### Manual validation flow
+
+Automated tests run headless and can't confirm the actual point of this
+project — that a human's tabs and each agent Space's tabs stay visibly
+separate in one shared window. `docs/MANUAL_VALIDATION.md` is a step-by-step
+human walkthrough for that: start the app for real (headed), then drive it
+with `npm run validate` (`scripts/manual-validate.mjs`, an interactive CLI
+over the WebSocket protocol) while watching the Chromium window to confirm
+Spaces can't see or close each other's tabs, or the human's.
+
 ## Repo layout
 
 ```
@@ -118,7 +149,10 @@ for agents, with the full request/response reference in
 │   ├── style.css
 │   └── app.ts
 ├── scripts/
-│   └── install.sh
+│   ├── install.sh
+│   └── manual-validate.mjs
+├── docs/
+│   └── MANUAL_VALIDATION.md
 ├── skills/
 │   └── ego-browser/
 │       ├── SKILL.md
