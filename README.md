@@ -585,6 +585,34 @@ directly from disk today. `npm run dev` runs both side by side via
 on this ESLint version (missing `eslint.config.js`) — pre-existing, not
 something this setup fixes.
 
+### 4. Packaged install (no build needed)
+
+Download a pre-built package from
+[GitHub Releases](https://github.com/rhyovar/hermes-agent-browser/releases)
+and skip the source build entirely.
+
+- **AppImage**: download `BrowseLens-0.1.0.AppImage`, make it executable,
+  and run it:
+  ```bash
+  chmod +x BrowseLens-0.1.0.AppImage
+  ./BrowseLens-0.1.0.AppImage
+  ```
+- **deb**: download `hermes-agent-browser_0.1.0_amd64.deb` and install it:
+  ```bash
+  sudo dpkg -i hermes-agent-browser_0.1.0_amd64.deb
+  ```
+
+Both packages bundle the Chromium runtime and protocol server; no Node.js
+or `npm install` is required on the target machine. To build these
+packages locally instead of downloading them:
+
+```bash
+npm install
+npm run dist   # produces AppImage + deb in release/
+```
+
+Full packaging walkthrough: [docs/ELECTRON.md](docs/ELECTRON.md).
+
 ## Contributing
 
 See CONTRIBUTING.md.

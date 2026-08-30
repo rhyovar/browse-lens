@@ -31,7 +31,10 @@ skill's entire surface is browser automation, not a general web-fetch tool.
 ## Prerequisites
 
 - `hermes-agent-browser` cloned; `./scripts/install.sh` run once (installs
-  npm deps and Playwright's Chromium build).
+  npm deps and Playwright's Chromium build). If you just want to use
+  BrowseLens as a desktop app, download the AppImage or deb from
+  [GitHub Releases](https://github.com/rhyovar/hermes-agent-browser/releases)
+  — no Node.js or `npm install` required.
 - The protocol server running: `npm run dev:electron` (part of `npm run
   dev`), listening on `ws://127.0.0.1:8765`.
 - No API keys or env vars — the protocol has no authentication.

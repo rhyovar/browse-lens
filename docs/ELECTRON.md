@@ -69,29 +69,51 @@ bundler, no external dependencies.
   `contextIsolation` is on. The renderer can only use browser APIs
   (`WebSocket`, `DOM`) — it cannot `require()` modules.
 
-## Building a Linux package (next step)
+## Building a Linux package (verified)
 
-To ship BrowseLens as an installable Linux package, add `electron-builder`
-to `devDependencies` and a `build` config to `package.json`:
-
-```json
-{
-  "build": {
-    "appId": "com.rhyovar.browselens",
-    "linux": {
-      "target": ["AppImage", "deb"],
-      "category": "Development"
-    }
-  }
-}
-```
-
-Then wire `dist` scripts into `package.json`:
+`electron-builder` is a `devDependency` (installed by `npm install`). The
+build requires Node.js `>= 20` (the repo's `engines.node` is `>=20`, and the
+CI/build machine tested this on Node 22). No extra OS packages are needed
+beyond what `install.sh` sets up for Playwright.
 
 ```bash
-npm run dist   # electron-builder produces AppImage + .deb in dist/
-npm run dist:unpack   # unpack the AppImage for debugging
+npm install          # installs electron-builder among other devDeps
+npm run dist         # builds the UI/TS, then runs electron-builder
 ```
 
-This is deferred because packaging a broken UI shell ships a broken
-product — validate the Electron window and WS integration first.
+Output lands in `release/` (configured via `directories.output` in
+`package.json`'s `build` block):
+
+- **AppImage**: `release/BrowseLens-0.1.0.AppImage` (~118 MB)
+- **deb**: `release/hermes-agent-browser_0.1.0_amd64.deb` (~92 MB)
+
+An `linux-unpacked/` directory is also written to `release/` for debugging.
+
+### Running the AppImage
+
+```bash
+chmod +x release/BrowseLens-0.1.0.AppImage
+./release/BrowseLens-0.1.0.AppImage
+```
+
+### Installing the deb
+
+```bash
+sudo dpkg -i release/hermes-agent-browser_0.1.0_amd64.deb
+```
+
+### Troubleshooting
+
+- **AppImage won't launch (missing libfuse2 / "FATAL: Kernel too old")**: the
+  bundled AppImage needs FUSE 2. On Ubuntu 22.04+ / modern Fedora, install
+  `libfuse2` (Debian/Ubuntu: `sudo apt install libfuse2`) or use the `deb`
+  package instead.
+- **deb install fails with dependency errors**: `sudo apt install -f` will
+  pull in any missing runtime deps (Electron/Chromium shared libs).
+- **Build fails with "electron-builder not found"**: make sure you ran
+  `npm install` in the repo root, not inside `ui/` or `src/`.
+- **Build is slow / runs out of memory**: `electron-builder` compresses the
+  Chromium runtime into the package. Ensure at least 4 GB free RAM and swap.
+- **Output is empty after `npm run dist`**: check `release/builder-debug.yml`
+  for the electron-builder config snapshot; also confirm `package.json`
+  has the `build` block (not accidentally deleted).
