@@ -198,4 +198,29 @@ describe('runAgentScript', () => {
     });
     await isolation.closeAll('space-a');
   });
+
+  it('extractJSON parses the text content of a matching element', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.setContent(`
+      <script id="data" type="application/json">{"name":"hermes","count":3}</script>
+    `);
+
+    const outcome = await runAgentScript(page, "return await tools.extractJSON('#data');");
+
+    expect(outcome).toMatchObject({ ok: true, result: { name: 'hermes', count: 3 } });
+    await isolation.closeAll('space-a');
+  });
+
+  it('extractJSON reports a clean error when the element text is not valid JSON', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.setContent('<script id="data" type="application/json">not json</script>');
+
+    const outcome = await runAgentScript(page, "return await tools.extractJSON('#data');");
+
+    expect(outcome.ok).toBe(false);
+    expect((outcome as { error: string }).error).toContain('does not contain valid JSON');
+    await isolation.closeAll('space-a');
+  });
 });

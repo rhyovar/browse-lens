@@ -170,6 +170,7 @@ authoring one.
 | `capture` | `capture(): Promise<string>` | A base64-encoded PNG screenshot | `page.screenshot()` |
 | `waitForSelector` | `waitForSelector(selector: string, timeoutMs?: number): Promise<void>` | Resolves once `selector` appears; default timeout 5000ms | `page.waitForSelector(selector, { timeout: timeoutMs })` |
 | `scrapeTable` | `scrapeTable(selector: string): Promise<{ headers: string[]; rows: string[][] }>` | Structured extraction from the first element matching `selector` (normally a `<table>`) — see below | `page.locator(selector).first().evaluate(...)` |
+| `extractJSON` | `extractJSON(selector: string): Promise<unknown>` | Parses the text content of the first element matching `selector` as JSON — see below | `page.locator(selector).first().evaluate(...)` |
 
 `console.log(...)` inside the script is captured into the response's `logs`
 array (joined per call) instead of printing anywhere — use it for
@@ -188,6 +189,15 @@ row counts as a header only if *every* cell in it is a `<th>`; otherwise
 Uses `HTMLTableElement.rows`, which covers plain tables, `<thead>`/`<tbody>`
 tables, and header-less tables uniformly, so it doesn't matter which
 structure the page uses.
+
+**`extractJSON`**: matches a page's embedded structured data — a
+`<script type="application/ld+json">` block, a framework's hydration state
+(e.g. `<script id="__NEXT_DATA__">`), or any element whose text is JSON.
+Parses the *first* matching element's `textContent`; if it isn't valid
+JSON, throws a clean error naming the selector instead of a raw
+`SyntaxError`. It does not search descendants for a nested JSON blob or
+fetch anything over the network — the selector must already point at the
+element holding the JSON text.
 
 ### What the sandbox does and doesn't guarantee
 

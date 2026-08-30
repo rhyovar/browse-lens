@@ -65,7 +65,24 @@ function buildTools(page: Page) {
         const dataRows = firstRowIsHeader ? allRows.slice(1) : allRows;
         const rows = dataRows.map((row) => Array.from(row.cells).map((cell) => cell.textContent?.trim() ?? ''));
         return { headers, rows };
-      })
+      }),
+
+    /**
+     * Parses the text content of the first element matching `selector` as
+     * JSON — e.g. a <script type="application/ld+json"> block or a
+     * framework's embedded state (<script id="__NEXT_DATA__">). Throws a
+     * clean error naming the selector if no element matches or its text
+     * isn't valid JSON, instead of leaking a raw SyntaxError.
+     */
+    extractJSON: (selector: string): Promise<unknown> =>
+      page.locator(selector).first().evaluate((el, sel) => {
+        const text = el.textContent ?? '';
+        try {
+          return JSON.parse(text);
+        } catch {
+          throw new Error(`extractJSON: element matching "${sel}" does not contain valid JSON`);
+        }
+      }, selector)
   };
 }
 
