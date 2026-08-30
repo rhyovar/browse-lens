@@ -45,7 +45,7 @@ Priority order for maximum traction:
 - [ ] Linux packaging
 - [x] Chrome profile import
 - [x] Agent tool surface
-- [ ] Benchmark harness
+- [x] Benchmark harness
 - [ ] Session recording/replay
 - [ ] Privacy mode
 - [ ] Plugin system
@@ -173,6 +173,24 @@ Chromium browser and the protocol server, listening on
 for agents, with the full request/response reference in
 [`skills/browse-lens/references/tool-reference.md`](skills/browse-lens/references/tool-reference.md).
 
+### Benchmark harness
+
+`npm run benchmark` (`scripts/benchmark.mjs`, methodology in
+[docs/BENCHMARK.md](docs/BENCHMARK.md)) runs a small, fixed corpus of
+deterministic tasks — open a URL, click a known selector, fill a form
+field, scrape a table cell — against a local static fixture page, over
+`browser.run`, and checks each with an explicit code-level pass/fail
+function. No LLM judge. It reports pass/fail and the wall-clock time of
+just the `browser.run` round-trip per task.
+
+Rows for `browser-use` and `agent-browser` currently report `skipped`
+rather than fabricated numbers: `browser-use` isn't installed here and is
+fundamentally LLM-driven (making a "run this exact deterministic script"
+adapter a real design question, not just plumbing), and "agent-browser"
+doesn't unambiguously name one package yet. See
+[docs/BENCHMARK.md](docs/BENCHMARK.md#why-browser-use-and-agent-browser-show-skipped)
+for what a real adapter needs.
+
 ### Manual validation flow
 
 Automated tests run headless and can't confirm the actual point of this
@@ -241,9 +259,11 @@ that opens nothing, so that's deferred until the UI lands.
 │   └── app.ts
 ├── scripts/
 │   ├── install.sh
-│   └── manual-validate.mjs
+│   ├── manual-validate.mjs
+│   └── benchmark.mjs
 ├── docs/
-│   └── MANUAL_VALIDATION.md
+│   ├── MANUAL_VALIDATION.md
+│   └── BENCHMARK.md
 ├── skills/
 │   └── browse-lens/
 │       ├── SKILL.md
@@ -317,13 +337,15 @@ test tooling.
 npm run dev        # dev:electron + dev:ui together
 npm test           # vitest; set HERMES_HEADLESS=true to run with no display
 npm run validate   # docs/MANUAL_VALIDATION.md's interactive CLI (needs dev:electron running)
+npm run benchmark  # docs/BENCHMARK.md's task corpus (also needs dev:electron running)
 ```
 
 What you get: everything from the minimal runtime, plus the Vite dev
 server on `http://localhost:4173` (a no-op today — there's no `ui/` yet to
 serve), and the commands used to verify a change: `npm test` (unit tests,
-see `tests/unit/`) and `npm run validate` for the manual walkthrough in
-`docs/MANUAL_VALIDATION.md`. `npm run lint` is in `package.json` but
+see `tests/unit/`), `npm run validate` for the manual walkthrough in
+`docs/MANUAL_VALIDATION.md`, and `npm run benchmark` for the deterministic
+task corpus in `docs/BENCHMARK.md`. `npm run lint` is in `package.json` but
 currently broken on this ESLint version (missing `eslint.config.js`) —
 pre-existing, not something this setup fixes.
 

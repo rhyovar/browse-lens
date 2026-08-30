@@ -22,7 +22,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint src --ext .ts",
-    "validate": "node scripts/manual-validate.mjs"
+    "validate": "node scripts/manual-validate.mjs",
+    "benchmark": "node scripts/benchmark.mjs"
   },
   "dependencies": {
     "playwright": "^1.55.0",
