@@ -23,7 +23,7 @@ Scaffolded. Repo created, structure planned. Implementation handoff queued for n
 - [x] Repo scaffold
 - [ ] Branch protection
 - [x] Playwright Chromium runtime
-- [ ] Space isolation
+- [x] Space isolation
 - [ ] WebSocket protocol
 - [ ] Agent skill wiring
 - [ ] Manual validation flow
@@ -44,6 +44,25 @@ logged-in state:
 
 Set `HERMES_HEADLESS=true` to run headless (used by the test suite).
 Run `npx playwright install chromium` once to fetch the browser binary.
+
+### Space isolation
+
+Every Space shares the one Chromium context above — isolation here is about
+tab *ownership*, not process isolation: a Space can only see, list, or close
+the pages it opened.
+
+- `space.ts` — the `Space` metadata shape (id, name, createdAt, active).
+- `registry.ts` — `SpaceRegistry` creates/looks up/lists Spaces; `close(id)`
+  tears down the Space's pages (via `isolation.ts`) before removing it.
+- `isolation.ts` — `SpaceIsolation` opens pages tagged with a `spaceId` and
+  enforces the guard: `list`/`close`/`closeAll` only ever act on pages owned
+  by the requesting Space, so one Space can't inspect or close another's
+  tabs (or the human's, which own no Space).
+
+This is wired into the WebSocket protocol (`space.create`, `space.close`,
+`browser.open`, `browser.list`, `browser.close`), each scoped by
+`payload.spaceId`; `browser.open`/`browser.list` reject an unknown
+`spaceId` with an `error` message.
 
 ## Repo layout
 

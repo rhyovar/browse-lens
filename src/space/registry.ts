@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import type { Space } from './space.js';
+import { spaceIsolation } from './isolation.js';
 
 export class SpaceRegistry {
   private spaces = new Map<string, Space>();
@@ -24,7 +25,9 @@ export class SpaceRegistry {
     return Array.from(this.spaces.values());
   }
 
-  close(id: string): boolean {
+  async close(id: string): Promise<boolean> {
+    if (!this.spaces.has(id)) return false;
+    await spaceIsolation.closeAll(id);
     return this.spaces.delete(id);
   }
 }
