@@ -17,7 +17,8 @@ function send(type, payload) {
 }
 
 const HELP = `commands:
-  space create [name]         create a Space
+  space create [name] [--import]   create a Space (--import seeds its first
+                                    context with the human's current cookies)
   space close <spaceId>       close a Space and all its pages
   open <spaceId> <url>        open a page owned by a Space
   list <spaceId>              list pages owned by a Space
@@ -61,9 +62,15 @@ rl.on('line', (line) => {
       ws.close();
       return;
     case 'space':
-      if (rest[0] === 'create') send('space.create', { name: rest.slice(1).join(' ') || undefined });
-      else if (rest[0] === 'close') send('space.close', { spaceId: rest[1] });
-      else console.log('usage: space create [name] | space close <spaceId>');
+      if (rest[0] === 'create') {
+        const importProfile = rest.includes('--import');
+        const name = rest.slice(1).filter((arg) => arg !== '--import').join(' ') || undefined;
+        send('space.create', { name, importProfile });
+      } else if (rest[0] === 'close') {
+        send('space.close', { spaceId: rest[1] });
+      } else {
+        console.log('usage: space create [name] [--import] | space close <spaceId>');
+      }
       break;
     case 'open':
       send('browser.open', { spaceId: rest[0], url: rest[1] });

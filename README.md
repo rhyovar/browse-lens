@@ -42,7 +42,7 @@ Priority order for maximum traction:
 - [x] Agent skill wiring
 - [x] Manual validation flow
 - [ ] Linux packaging
-- [ ] Chrome profile import
+- [x] Chrome profile import
 - [ ] Benchmark harness
 - [ ] Session recording/replay
 - [ ] Privacy mode
@@ -74,9 +74,8 @@ Run `npx playwright install chromium` once to fetch the browser binary.
 Every Space gets its **own `BrowserContext`** inside the one shared Chromium
 process — a separate cookie jar, localStorage, and session state, not just
 separate tabs. A Space can't read or clobber another Space's data, or the
-human's; the human's context is likewise never shared with any Space.
-(Chrome profile import — letting a Space *opt in* to inherit the human's
-real logins — is a separate, not-yet-built roadmap item.)
+human's; the human's context is likewise never shared with any Space by
+default (see Chrome profile import below for the opt-in exception).
 
 Chromium (via CDP, confirmed with `Browser.getWindowForTarget`) shows each
 `BrowserContext` as its own OS window — there's no way to give two isolated
@@ -85,7 +84,7 @@ reuses) **that Space's own window**, separate from the human's window and
 every other Space's; pages opened within the same Space do share one window
 as tabs, same as before.
 
-- `space.ts` — the `Space` metadata shape (id, name, createdAt, active).
+- `space.ts` — the `Space` metadata shape (id, name, createdAt, active, importProfile).
 - `registry.ts` — `SpaceRegistry` creates/looks up/lists Spaces; `close(id)`
   tears down the Space's pages (via `isolation.ts`) before removing it.
 - `isolation.ts` — `SpaceIsolation.getContext(spaceId)` lazily creates a
@@ -101,6 +100,26 @@ This is wired into the WebSocket protocol (`space.create`, `space.close`,
 `tests/unit/isolation.test.ts` proves this isn't just bookkeeping: one test
 sets a cookie and a `localStorage` value in Space A, opens the same URL in
 Space B, and asserts neither is visible there.
+
+### Chrome profile import
+
+A Space normally starts with an empty cookie jar. Passing
+`importProfile: true` on `space.create` seeds that Space's **first**
+`BrowserContext` (created on its first `browser.open`) with a one-time
+snapshot of the human's current cookies/localStorage
+(`(await ensureHumanContext()).storageState()`, passed straight into
+`browser.newContext({ storageState })` — no disk round-trip). It's a
+snapshot, not a live link: later changes on either side don't sync, and
+re-opening a page in the same Space reuses its already-created context
+regardless of the flag.
+
+This is opt-in and off by default — inheriting the human's real logins into
+an agent-controlled context is a real trust boundary, not just a
+convenience. `skills/ego-browser/SKILL.md`'s Safety section tells agents to
+request it only when the task explicitly needs the human's own account.
+`tests/unit/isolation.test.ts` proves both directions: a Space created with
+`importProfile: true` sees a cookie set on the human's context; one without
+it doesn't.
 
 ### WebSocket protocol + agent skill wiring
 

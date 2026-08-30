@@ -34,4 +34,16 @@ describe('space registry', () => {
     const registry = new SpaceRegistry();
     expect(await registry.close('does-not-exist')).toBe(false);
   });
+
+  it('defaults importProfile to false', () => {
+    const registry = new SpaceRegistry();
+    const space = registry.create('freelance-scan');
+    expect(space.importProfile).toBe(false);
+  });
+
+  it('records importProfile when requested', () => {
+    const registry = new SpaceRegistry();
+    const space = registry.create('freelance-scan', true);
+    expect(space.importProfile).toBe(true);
+  });
 });

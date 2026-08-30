@@ -9,14 +9,25 @@ the same shapes.
 
 Request:
 ```json
-{ "type": "space.create", "payload": { "name": "freelance-scan" } }
+{ "type": "space.create", "payload": { "name": "freelance-scan", "importProfile": false } }
 ```
-`name` is optional (defaults to `"untitled"`).
+`name` is optional (defaults to `"untitled"`). `importProfile` is optional
+(defaults to `false`) — see "Chrome profile import" below.
 
 Response: `space.created` with the new `Space`:
 ```json
-{ "type": "space.created", "payload": { "id": "...", "name": "freelance-scan", "createdAt": 0, "active": true } }
+{ "type": "space.created", "payload": { "id": "...", "name": "freelance-scan", "createdAt": 0, "active": true, "importProfile": false } }
 ```
+
+### Chrome profile import
+
+`importProfile: true` seeds the Space's cookie jar/localStorage with a
+one-time snapshot of the human's current session, taken when the Space's
+first page is opened (`browser.open`) — not at `space.create` time, and not
+a live link (later changes on either side don't sync). Everything else
+about the Space works the same; this only changes what its first
+`BrowserContext` starts with. See the Safety section in
+[../SKILL.md](../SKILL.md) before requesting it.
 
 ## space.close
 

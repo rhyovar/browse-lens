@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 const SpaceCreate = z.object({
   type: z.literal('space.create'),
-  payload: z.object({ name: z.string().min(1).optional() })
+  payload: z.object({
+    name: z.string().min(1).optional(),
+    importProfile: z.boolean().optional()
+  })
 });
 
 const SpaceClose = z.object({

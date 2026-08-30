@@ -1,11 +1,22 @@
 import { randomUUID } from 'crypto';
 import type { BrowserContext, Page } from 'playwright';
-import { ensureBrowser } from '../browser/chromium.js';
+import { ensureBrowser, ensureHumanContext } from '../browser/chromium.js';
 
 export interface SpacePage {
   id: string;
   spaceId: string;
   url: string;
+}
+
+export interface GetContextOptions {
+  /**
+   * Seed a newly-created context with a snapshot of the human's current
+   * cookies/localStorage (Chrome profile import) instead of starting empty.
+   * Only matters the first time a Space's context is created; ignored once
+   * the context already exists. This is a one-time snapshot, not a live
+   * link — later changes to the human's session aren't reflected back.
+   */
+  importProfile?: boolean;
 }
 
 /**
@@ -18,18 +29,21 @@ export class SpaceIsolation {
   private contexts = new Map<string, BrowserContext>();
   private pages = new Map<string, { spaceId: string; page: Page }>();
 
-  async getContext(spaceId: string): Promise<BrowserContext> {
+  async getContext(spaceId: string, options: GetContextOptions = {}): Promise<BrowserContext> {
     let ctx = this.contexts.get(spaceId);
     if (!ctx) {
       const browser = await ensureBrowser();
-      ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      const storageState = options.importProfile
+        ? await (await ensureHumanContext()).storageState()
+        : undefined;
+      ctx = await browser.newContext({ storageState, viewport: { width: 1440, height: 900 } });
       this.contexts.set(spaceId, ctx);
     }
     return ctx;
   }
 
-  async open(spaceId: string, url: string): Promise<SpacePage> {
-    const ctx = await this.getContext(spaceId);
+  async open(spaceId: string, url: string, options: GetContextOptions = {}): Promise<SpacePage> {
+    const ctx = await this.getContext(spaceId, options);
     const page = await ctx.newPage();
     await page.goto(url);
     const id = randomUUID();

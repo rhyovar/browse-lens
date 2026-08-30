@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll } from 'vitest';
 
 process.env.HERMES_HEADLESS = 'true';
 
-const { closeBrowser } = await import('../../src/browser/context.js');
+const { closeBrowser, ensureHumanContext } = await import('../../src/browser/context.js');
 const { SpaceIsolation } = await import('../../src/space/isolation.js');
 
 describe('space isolation', () => {
@@ -71,5 +71,27 @@ describe('space isolation', () => {
 
     await isolation.closeAll('space-a');
     await isolation.closeAll('space-b');
+  });
+
+  it('imports the human profile only when requested', async () => {
+    const humanCtx = await ensureHumanContext();
+    await humanCtx.addCookies([
+      { name: 'human-session', value: 'real-login', url: 'https://example.com' }
+    ]);
+
+    const isolation = new SpaceIsolation();
+
+    await isolation.open('space-imports', 'https://example.com', { importProfile: true });
+    const ctxImport = await isolation.getContext('space-imports');
+    const importedCookies = await ctxImport.cookies('https://example.com');
+    expect(importedCookies.find((c) => c.name === 'human-session')?.value).toBe('real-login');
+
+    await isolation.open('space-fresh', 'https://example.com', { importProfile: false });
+    const ctxFresh = await isolation.getContext('space-fresh');
+    const freshCookies = await ctxFresh.cookies('https://example.com');
+    expect(freshCookies.find((c) => c.name === 'human-session')).toBeUndefined();
+
+    await isolation.closeAll('space-imports');
+    await isolation.closeAll('space-fresh');
   });
 });

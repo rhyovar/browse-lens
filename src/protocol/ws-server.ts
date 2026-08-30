@@ -25,7 +25,7 @@ wss.on('connection', (ws: WebSocket) => {
 
     switch (msg.type) {
       case 'space.create': {
-        const space = registry.create(msg.payload.name ?? 'untitled');
+        const space = registry.create(msg.payload.name ?? 'untitled', msg.payload.importProfile ?? false);
         send(ws, 'space.created', space);
         break;
       }
@@ -35,11 +35,14 @@ wss.on('connection', (ws: WebSocket) => {
         break;
       }
       case 'browser.open': {
-        if (!registry.get(msg.payload.spaceId)) {
+        const space = registry.get(msg.payload.spaceId);
+        if (!space) {
           error(ws, `unknown space: ${msg.payload.spaceId}`);
           break;
         }
-        const opened = await spaceIsolation.open(msg.payload.spaceId, msg.payload.url);
+        const opened = await spaceIsolation.open(msg.payload.spaceId, msg.payload.url, {
+          importProfile: space.importProfile
+        });
         send(ws, 'browser.opened', opened);
         break;
       }

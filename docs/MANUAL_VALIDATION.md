@@ -82,7 +82,17 @@ the Chromium windows after each `open`/`close` step.
     - **Check:** the response is `closed: true`, and Space A's entire
       window closes — both its tabs, and its cookies/localStorage are gone
       with it. The human's window is untouched.
-13. `quit` to exit the CLI. Stop the app with `Ctrl+C` in the first
+13. In the human's window, log into any site by hand (or open the devtools
+    console and run `document.cookie = 'probe=human-value'` on some page).
+14. `space create demo-c --import`, note the `id` as `C`. Then
+    `open C <same site or URL from step 13>`.
+    - **Check:** the new window for Space C is already logged in / has
+      `document.cookie` containing `probe=human-value` — it inherited a
+      snapshot of the human's session, unlike `demo-a`/`demo-b` above.
+15. `space create demo-d` (no `--import`), then open the same URL there.
+    - **Check:** this one is *not* logged in / has no `probe` cookie —
+      confirming import is opt-in, not automatic.
+16. `quit` to exit the CLI. Stop the app with `Ctrl+C` in the first
     terminal — this saves the human's session (cookies/localStorage) to
     `~/.hermes-agent-browser/human.storage-state.json` so it's there next
     time; killing the process instead (`kill -9`) skips that save.
@@ -91,6 +101,9 @@ the Chromium windows after each `open`/`close` step.
 
 - Each Space gets its own window and its own cookie jar/localStorage —
   verified in step 8, not just inferred from tab lists.
+- `importProfile`/`--import` is opt-in: only a Space created with it
+  inherits the human's session (step 14); one created without it doesn't
+  (step 15).
 - Every `list`/`close` call only ever affects the Space that made it.
 - Pages opened by hand in the human's window are never listed or closed by
   Space operations.
