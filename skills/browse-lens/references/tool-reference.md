@@ -171,6 +171,7 @@ authoring one.
 | `waitForSelector` | `waitForSelector(selector: string, timeoutMs?: number): Promise<void>` | Resolves once `selector` appears; default timeout 5000ms | `page.waitForSelector(selector, { timeout: timeoutMs })` |
 | `scrapeTable` | `scrapeTable(selector: string): Promise<{ headers: string[]; rows: string[][] }>` | Structured extraction from the first element matching `selector` (normally a `<table>`) — see below | `page.locator(selector).first().evaluate(...)` |
 | `extractJSON` | `extractJSON(selector: string): Promise<unknown>` | Parses the text content of the first element matching `selector` as JSON — see below | `page.locator(selector).first().evaluate(...)` |
+| `monitorNetwork` | `monitorNetwork(durationMs?: number): Promise<NetworkEvent[]>` | An array of `{ url, method, status, type, timestamp }` for every response seen in the watch window; default window 3000ms — see below | `page.on('response', ...)` for `durationMs`, then detached |
 
 `console.log(...)` inside the script is captured into the response's `logs`
 array (joined per call) instead of printing anywhere — use it for
@@ -207,6 +208,26 @@ for `extractJSON` (JSON-LD, `__NEXT_DATA__`, and similar are always
 `<script>`-wrapped), so for those, either poll `extractJSON` directly in a
 small retry loop inside your own script, or wait on a *visible* sibling
 that signals the data has loaded.
+
+**`monitorNetwork`**: attaches a listener for `durationMs` (default 3s),
+then detaches it and resolves with one entry per response seen in that
+window — read-only observation, nothing is blocked, modified, or
+persisted to disk. Only requests that complete with a response are
+recorded; one that's aborted, blocked by the Space's network policy, or
+still in flight when the window closes won't appear, since there's no
+status to report for it. Call it *without* awaiting immediately so the
+window is already open while you trigger the action you want to observe,
+then await it afterward:
+
+```js
+const events = tools.monitorNetwork(2000);
+await tools.click('#load-more');
+return await events;
+```
+
+Awaiting it right away (`await tools.monitorNetwork(2000)`) just watches
+whatever happens to fire during that window on its own — usually not what
+you want if the requests are triggered by an action later in the script.
 
 ### What the sandbox does and doesn't guarantee
 

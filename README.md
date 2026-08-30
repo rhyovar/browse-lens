@@ -42,9 +42,9 @@ this work rather than invented fresh:
 2. ~~General allow/block domain list~~ — done, see Privacy mode subsection above.
 3. New `tools.*` sandbox functions (Plugin system's fast-follow) — shipped
    one at a time, not batched, to prove the mechanism before committing to
-   the rest. `waitForSelector()`, `scrapeTable()`, and `extractJSON()` done
-   (see Agent tool surface subsection above); `downloadFile()`,
-   `monitorNetwork()`, `injectScript()` still unbuilt.
+   the rest. `waitForSelector()`, `scrapeTable()`, `extractJSON()`, and
+   `monitorNetwork()` done (see Agent tool surface subsection above);
+   `downloadFile()`, `injectScript()` still unbuilt.
 4. New WS message types — `session.export`/`import`, `proxy.configure`,
    `auth.inject`, `HAR.export` (also from Plugin system's scoping).
 5. Video/trace recording (Session recording's fast-follow).
@@ -155,7 +155,7 @@ click" — an agent should read the page, act, wait, and read again as **one
 execution pass**, not a round-trip loop. `browser.run` does that: it sends
 one JS snippet, which runs against a page with a `tools` object in scope
 (`snapshot`, `click`, `fill`, `scroll`, `waitForLoad`, `url`, `title`,
-`capture`, `waitForSelector`, `scrapeTable`, `extractJSON` — each maps to one Playwright
+`capture`, `waitForSelector`, `scrapeTable`, `extractJSON`, `monitorNetwork` — each maps to one Playwright
 `Page` call; exact signatures in
 [`skills/browse-lens/references/tool-reference.md`](skills/browse-lens/references/tool-reference.md)),
 and gets back one structured result — the return value, any `console.log`
@@ -194,8 +194,8 @@ filesystem or network trust boundary to design. It parses the `textContent`
 of the first element matching `selector` as JSON — e.g. a
 `<script type="application/ld+json">` block or a framework's embedded
 hydration state — and throws a clean, selector-naming error instead of a
-raw `SyntaxError` when the text isn't valid JSON. `downloadFile()`,
-`monitorNetwork()`, and `injectScript()` remain unbuilt.
+raw `SyntaxError` when the text isn't valid JSON. `downloadFile()` and
+`injectScript()` remain unbuilt.
 
 Live testing surfaced a real gotcha, not just a fixture quirk: chaining
 `waitForSelector` in front of `extractJSON` breaks on the most common
@@ -204,6 +204,22 @@ default `state` is `'visible'`, and script elements are never visible, so
 the wait times out even once the JSON is present. Documented in
 `tool-reference.md`; the example plugin's `extractEmbeddedJSON` script
 deliberately skips the wait rather than composing a broken combination.
+
+`monitorNetwork(durationMs?)` is the fourth addition — chosen over
+`downloadFile()`/`injectScript()` as bounded, read-only observation with
+no filesystem or code-injection trust boundary to design, and a real gap
+for benchmarking and debugging agent runs. It attaches a `page.on('response')`
+listener for `durationMs` (default 3s), then detaches it and resolves with
+one `{ url, method, status, type, timestamp }` entry per response seen —
+only requests that complete with a response are recorded, so anything
+aborted, policy-blocked, or still in flight when the window closes is
+absent. It's designed to be called without awaiting immediately, so the
+window is already open while a later `tools.click(...)` (or similar)
+triggers the traffic being watched: `const events = tools.monitorNetwork(2000);
+await tools.click(...); return await events;`. A dedicated test proves the
+listener is actually detached after each call — a second `monitorNetwork`
+window doesn't see requests only the first call's. `downloadFile()` and
+`injectScript()` remain unbuilt.
 
 **This is not a hardened sandbox.** Node's own docs say `vm` isn't a
 security mechanism, and the protocol has no authentication — a `browser.run`

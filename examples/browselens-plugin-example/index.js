@@ -36,6 +36,17 @@ export default {
      */
     extractEmbeddedJSON: (params) => `
       return await tools.extractJSON(${JSON.stringify(params.selector)});
+    `,
+
+    /**
+     * Opens the network watch window before clicking, so requests the
+     * click triggers are captured, not missed. params: { selector,
+     * durationMs? }.
+     */
+    monitorDuringClick: (params) => `
+      const events = tools.monitorNetwork(${JSON.stringify(params.durationMs ?? 3000)});
+      await tools.click(${JSON.stringify(params.selector)});
+      return await events;
     `
   }
 };

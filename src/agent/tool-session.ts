@@ -1,5 +1,5 @@
 import vm from 'node:vm';
-import type { Page } from 'playwright';
+import type { Page, Response } from 'playwright';
 
 export interface ToolRunSuccess {
   ok: true;
@@ -29,6 +29,16 @@ const DEFAULT_WAIT_FOR_SELECTOR_MS = 5_000;
 export interface ScrapedTable {
   headers: string[];
   rows: string[][];
+}
+
+const DEFAULT_MONITOR_NETWORK_MS = 3_000;
+
+export interface NetworkEvent {
+  url: string;
+  method: string;
+  status: number;
+  type: string;
+  timestamp: number;
 }
 
 function buildTools(page: Page) {
@@ -82,7 +92,39 @@ function buildTools(page: Page) {
         } catch {
           throw new Error(`extractJSON: element matching "${sel}" does not contain valid JSON`);
         }
-      }, selector)
+      }, selector),
+
+    /**
+     * Watches network responses for `durationMs` (default 3s) and returns
+     * one { url, method, status, type, timestamp } entry per response
+     * received in that window. Only requests that complete with a
+     * response are recorded — one aborted, blocked by network policy, or
+     * still in flight when the window closes won't appear, since there's
+     * no status to report for it. Call without awaiting immediately so
+     * the window is already open while you trigger the action you want
+     * to observe: `const events = tools.monitorNetwork(2000); await
+     * tools.click(...); return await events;`.
+     */
+    monitorNetwork: (durationMs: number = DEFAULT_MONITOR_NETWORK_MS): Promise<NetworkEvent[]> => {
+      const events: NetworkEvent[] = [];
+      const onResponse = (response: Response) => {
+        const request = response.request();
+        events.push({
+          url: request.url(),
+          method: request.method(),
+          status: response.status(),
+          type: request.resourceType(),
+          timestamp: Date.now()
+        });
+      };
+      page.on('response', onResponse);
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          page.off('response', onResponse);
+          resolve(events);
+        }, durationMs);
+      });
+    }
   };
 }
 

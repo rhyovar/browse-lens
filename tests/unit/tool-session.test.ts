@@ -223,4 +223,73 @@ describe('runAgentScript', () => {
     expect((outcome as { error: string }).error).toContain('does not contain valid JSON');
     await isolation.closeAll('space-a');
   });
+
+  it('monitorNetwork records requests made during the watch window', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.route('https://fake.test/pixel.png', (route) =>
+      route.fulfill({ status: 204, contentType: 'text/plain', body: '' })
+    );
+    await page.setContent(
+      `<button id="btn" onclick="fetch('https://fake.test/pixel.png').catch(() => {})">Go</button>`
+    );
+
+    const outcome = await runAgentScript(
+      page,
+      `
+      const events = tools.monitorNetwork(500);
+      await tools.click('#btn');
+      return await events;
+      `
+    );
+
+    expect(outcome.ok).toBe(true);
+    const events = (outcome as { result: unknown[] }).result;
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ url: 'https://fake.test/pixel.png', method: 'GET', status: 204, type: 'fetch' });
+    expect(typeof (events[0] as { timestamp: number }).timestamp).toBe('number');
+    await isolation.closeAll('space-a');
+  }, 10_000);
+
+  it('monitorNetwork returns an empty array when no requests occur during the window', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+
+    const outcome = await runAgentScript(page, 'return await tools.monitorNetwork(200);');
+
+    expect(outcome).toMatchObject({ ok: true, result: [] });
+    await isolation.closeAll('space-a');
+  }, 10_000);
+
+  it('monitorNetwork does not leak its listener across repeated calls', async () => {
+    const isolation = new SpaceIsolation();
+    const page = await openPage(isolation, 'about:blank');
+    await page.route('https://fake.test/pixel.png', (route) =>
+      route.fulfill({ status: 204, contentType: 'text/plain', body: '' })
+    );
+    await page.setContent(
+      `<button id="btn" onclick="fetch('https://fake.test/pixel.png').catch(() => {})">Go</button>`
+    );
+
+    const outcome = await runAgentScript(
+      page,
+      `
+      let first = tools.monitorNetwork(300);
+      await tools.click('#btn');
+      first = await first;
+
+      let second = tools.monitorNetwork(300);
+      await tools.click('#btn');
+      second = await second;
+
+      return { first, second };
+      `
+    );
+
+    expect(outcome.ok).toBe(true);
+    const { first, second } = (outcome as { result: { first: unknown[]; second: unknown[] } }).result;
+    expect(first).toHaveLength(1);
+    expect(second).toHaveLength(1);
+    await isolation.closeAll('space-a');
+  }, 10_000);
 });
